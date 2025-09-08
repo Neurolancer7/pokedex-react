@@ -15,51 +15,52 @@ export const fetchAndCachePokemon = action({
     const offset = args.offset || 0;
     
     try {
-      // Fetch Pokemon list
-      const listResponse = await fetch(
-        `https://pokeapi.co/api/v2/pokemon?limit=${limit}&offset=${offset}`
-      );
-      // Add response.ok check
-      if (!listResponse.ok) {
-        throw new Error(`PokéAPI list request failed: ${listResponse.status} ${listResponse.statusText}`);
-      }
-      const listData = await listResponse.json();
-      
-      // Cache types first
-      await cacheTypes(ctx);
-      
-      // Process each Pokemon with controlled concurrency
-      const results: Array<{ name: string; url: string }> = listData.results || [];
-      if (results.length === 0) {
+      // If a range is provided (limit/offset), build the list of IDs directly to avoid the list endpoint round trip
+      const ids: number[] = Array.from({ length: limit }, (_, i) => offset + i + 1).filter((id) => id <= 1025);
+
+      // If no ids (edge), return early
+      if (ids.length === 0) {
         return { success: true, cached: 0 };
       }
 
-      const CONCURRENCY = 8; // balance speed and API friendliness
-      for (let i = 0; i < results.length; i += CONCURRENCY) {
-        const batch = results.slice(i, i + CONCURRENCY);
+      // Cache types first
+      await cacheTypes(ctx);
+
+      // Choose concurrency based on region; Paldea (>= 906) gets higher concurrency
+      const isPaldeaOnly = ids.every((id) => id >= 906);
+      const CONCURRENCY = isPaldeaOnly ? 16 : 8;
+      const BATCH_DELAY_MS = isPaldeaOnly ? 50 : 150;
+
+      for (let i = 0; i < ids.length; i += CONCURRENCY) {
+        const batch = ids.slice(i, i + CONCURRENCY);
 
         await Promise.all(
-          batch.map(async (pokemon) => {
-            const pokemonId = parseInt(pokemon.url.split('/').slice(-2, -1)[0]);
-            
-            // Check if already cached
+          batch.map(async (pokemonId) => {
+            // Skip if already cached
             const existing = await ctx.runQuery(internal.pokemonInternal.getByIdInternal, { pokemonId });
             if (existing) return;
-            
-            // Fetch detailed Pokemon data
-            const pokemonResponse = await fetch(pokemon.url);
+
+            // Construct endpoints directly by id and fetch both in parallel
+            const pokemonUrl = `https://pokeapi.co/api/v2/pokemon/${pokemonId}`;
+            const speciesUrl = `https://pokeapi.co/api/v2/pokemon-species/${pokemonId}`;
+
+            const [pokemonResponse, speciesResponse] = await Promise.all([
+              fetch(pokemonUrl),
+              fetch(speciesUrl),
+            ]);
+
             if (!pokemonResponse.ok) {
               throw new Error(`PokéAPI pokemon request failed (id ${pokemonId}): ${pokemonResponse.status} ${pokemonResponse.statusText}`);
             }
-            const pokemonData = await pokemonResponse.json();
-            
-            // Fetch species data
-            const speciesResponse = await fetch(pokemonData.species.url);
             if (!speciesResponse.ok) {
               throw new Error(`PokéAPI species request failed (id ${pokemonId}): ${speciesResponse.status} ${speciesResponse.statusText}`);
             }
-            const speciesData = await speciesResponse.json();
-            
+
+            const [pokemonData, speciesData] = await Promise.all([
+              pokemonResponse.json(),
+              speciesResponse.json(),
+            ]);
+
             // Cache Pokemon
             await ctx.runMutation(internal.pokemonInternal.cachePokemon, {
               pokemonData,
@@ -69,10 +70,10 @@ export const fetchAndCachePokemon = action({
         );
 
         // Tiny delay between batches to avoid spikes
-        await new Promise(resolve => setTimeout(resolve, 150));
+        await new Promise((resolve) => setTimeout(resolve, BATCH_DELAY_MS));
       }
       
-      return { success: true, cached: results.length };
+      return { success: true, cached: ids.length };
     } catch (error) {
       console.error("Error fetching Pokemon data:", error);
       // Provide clean error message
