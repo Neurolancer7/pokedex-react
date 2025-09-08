@@ -10,49 +10,47 @@ import { useQuery as useConvexQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { PokemonGrid } from "@/components/PokemonGrid";
 
+const LANDING_FEATURES = [
+  {
+    icon: Search,
+    title: "Advanced Search",
+    description: "Find Pokémon by name, type, generation, or stats with powerful filtering options.",
+  },
+  {
+    icon: Heart,
+    title: "Personal Favorites",
+    description: "Save your favorite Pokémon and build your dream team collection.",
+  },
+  {
+    icon: Zap,
+    title: "Detailed Stats",
+    description: "View comprehensive stats, abilities, moves, and evolution chains.",
+  },
+  {
+    icon: Shield,
+    title: "Type Effectiveness",
+    description: "Learn about type matchups and strategic battle advantages.",
+  },
+];
+
+const LANDING_SAMPLE_POKEMON = [
+  { id: 1, name: "Bulbasaur", types: ["grass", "poison"], image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/1.png" },
+  { id: 4, name: "Charmander", types: ["fire"], image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/4.png" },
+  { id: 7, name: "Squirtle", types: ["water"], image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/7.png" },
+  { id: 25, name: "Pikachu", types: ["electric"], image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png" },
+];
+
+const LANDING_TYPE_COLORS: Record<string, string> = {
+  grass: "#78C850",
+  poison: "#A040A0",
+  fire: "#F08030",
+  water: "#6890F0",
+  electric: "#F8D030",
+};
+
 export default function Landing() {
   const { isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
-
-  const features = [
-    {
-      icon: Search,
-      title: "Advanced Search",
-      description: "Find Pokémon by name, type, generation, or stats with powerful filtering options.",
-    },
-    {
-      icon: Heart,
-      title: "Personal Favorites",
-      description: "Save your favorite Pokémon and build your dream team collection.",
-    },
-    {
-      icon: Zap,
-      title: "Detailed Stats",
-      description: "View comprehensive stats, abilities, moves, and evolution chains.",
-    },
-    {
-      icon: Shield,
-      title: "Type Effectiveness",
-      description: "Learn about type matchups and strategic battle advantages.",
-    },
-  ];
-
-  const samplePokemon = [
-    { id: 1, name: "Bulbasaur", types: ["grass", "poison"], image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/1.png" },
-    { id: 4, name: "Charmander", types: ["fire"], image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/4.png" },
-    { id: 7, name: "Squirtle", types: ["water"], image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/7.png" },
-    { id: 25, name: "Pikachu", types: ["electric"], image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png" },
-  ];
-
-  const typeColors: Record<string, string> = {
-    grass: "#78C850",
-    poison: "#A040A0",
-    fire: "#F08030",
-    water: "#6890F0",
-    electric: "#F8D030",
-  };
-
-  // Removed early return to keep hooks order consistent across renders
 
   const [page, setPage] = useState(1);
   const LIMIT = 20;
@@ -185,7 +183,7 @@ export default function Landing() {
             transition={{ delay: 0.5 }}
             className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto"
           >
-            {samplePokemon.map((pokemon, index) => (
+            {LANDING_SAMPLE_POKEMON.map((pokemon, index) => (
               <motion.div
                 key={pokemon.id}
                 initial={{ y: 30, opacity: 0 }}
@@ -212,8 +210,8 @@ export default function Landing() {
                             variant="secondary"
                             className="text-xs"
                             style={{
-                              backgroundColor: typeColors[type] + "20",
-                              color: typeColors[type],
+                              backgroundColor: LANDING_TYPE_COLORS[type] + "20",
+                              color: LANDING_TYPE_COLORS[type],
                             }}
                           >
                             {type}
@@ -269,7 +267,7 @@ export default function Landing() {
         </motion.div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {features.map((feature, index) => (
+          {LANDING_FEATURES.map((feature, index) => (
             <motion.div
               key={feature.title}
               initial={{ y: 30, opacity: 0 }}
@@ -304,7 +302,7 @@ export default function Landing() {
         >
           <div className="flex justify-center mb-6">
             <div className="flex -space-x-2">
-              {samplePokemon.slice(0, 3).map((pokemon) => (
+              {LANDING_SAMPLE_POKEMON.slice(0, 3).map((pokemon) => (
                 <div
                   key={pokemon.id}
                   className="w-12 h-12 bg-white rounded-full border-2 border-background flex items-center justify-center"

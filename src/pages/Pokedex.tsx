@@ -284,7 +284,7 @@ export default function Pokedex() {
           animate={{ opacity: 1 }}
           className="mt-8"
         >
-          {!showFavorites && totalPages > 1 && (
+          {false && (
             <div className="flex justify-center">
               <Pagination>
                 <PaginationContent>
