@@ -109,38 +109,53 @@ export function PokemonGrid({
         typeof onPageChange === "function" &&
         totalPages > 1 && (
           <div className="mt-8 flex justify-center">
-            {/* Use shadcn/ui Pagination primitives already used elsewhere */}
-            <nav className="flex items-center gap-1" aria-label="pagination">
+            <nav
+              className="flex items-center gap-1.5 bg-card/60 backdrop-blur rounded-full p-1.5 shadow-sm border"
+              aria-label="pagination"
+            >
               <button
-                className={`px-3 py-2 rounded-md text-sm border ${currentPage === 1 ? "opacity-50 pointer-events-none" : ""}`}
+                className={`h-9 w-9 inline-flex items-center justify-center rounded-full text-sm transition-colors
+                  ${currentPage === 1
+                    ? "opacity-50 pointer-events-none"
+                    : "hover:bg-accent/60"}
+                `}
                 onClick={() => onPageChange(Math.max(1, currentPage - 1))}
                 aria-label="Previous page"
               >
                 ‹
               </button>
+
               {getPageNumbers(currentPage, totalPages).map((p, idx) =>
                 p === "ellipsis" ? (
                   <span
                     key={`e-${idx}`}
-                    className="px-3 py-2 rounded-md text-sm text-muted-foreground"
+                    className="h-9 min-w-9 px-2 inline-flex items-center justify-center rounded-full text-sm text-muted-foreground"
                   >
-                    ...
+                    …
                   </span>
                 ) : (
                   <button
                     key={p}
                     onClick={() => onPageChange(p as number)}
-                    className={`px-3 py-2 rounded-md text-sm border ${
-                      p === currentPage ? "bg-primary text-primary-foreground border-primary" : ""
-                    }`}
+                    className={`h-9 min-w-9 px-3 inline-flex items-center justify-center rounded-full text-sm transition-colors
+                      ${p === currentPage
+                        ? "bg-primary text-primary-foreground"
+                        : "hover:bg-accent/60"
+                      }`}
                     aria-current={p === currentPage ? "page" : undefined}
+                    aria-label={`Page ${p}`}
                   >
                     {p}
                   </button>
                 )
               )}
+
               <button
-                className={`px-3 py-2 rounded-md text-sm border ${currentPage === totalPages ? "opacity-50 pointer-events-none" : ""}`}
+                className={`h-9 w-9 inline-flex items-center justify-center rounded-full text-sm transition-colors
+                  ${currentPage === totalPages
+                    ? "opacity-50 pointer-events-none"
+                    : "hover:bg-accent/60"}
+                `}
                 onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
                 aria-label="Next page"
               >
