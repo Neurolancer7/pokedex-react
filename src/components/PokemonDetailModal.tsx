@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Heart, Ruler, Weight, Zap, Shield, Sword, Activity } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -21,6 +22,9 @@ interface PokemonDetailModalProps {
   onClose: () => void;
   isFavorite?: boolean;
   onFavoriteToggle?: (pokemonId: number) => void;
+  onNavigate?: (direction: "prev" | "next") => void;
+  hasPrev?: boolean;
+  hasNext?: boolean;
 }
 
 export function PokemonDetailModal({
@@ -29,6 +33,9 @@ export function PokemonDetailModal({
   onClose,
   isFavorite = false,
   onFavoriteToggle,
+  onNavigate,
+  hasPrev,
+  hasNext,
 }: PokemonDetailModalProps) {
   if (!pokemon) return null;
 
@@ -64,6 +71,30 @@ export function PokemonDetailModal({
                 </DialogTitle>
               </div>
               <div className="flex items-center gap-2">
+                {typeof onNavigate === "function" && (
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => onNavigate("prev")}
+                      disabled={!hasPrev}
+                      aria-label="Previous Pokémon"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => onNavigate("next")}
+                      disabled={!hasNext}
+                      aria-label="Next Pokémon"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </>
+                )}
                 {onFavoriteToggle && (
                   <Button
                     variant="ghost"

@@ -241,6 +241,24 @@ export function PokemonGrid({
         onClose={() => setSelectedPokemon(null)}
         isFavorite={selectedPokemon ? favorites.includes(selectedPokemon.pokemonId) : false}
         onFavoriteToggle={onFavoriteToggle}
+        onNavigate={(dir) => {
+          if (!selectedPokemon) return;
+          const idx = pokemon.findIndex(p => p.pokemonId === selectedPokemon.pokemonId);
+          if (idx === -1) return;
+          const nextIndex = dir === "next" ? idx + 1 : idx - 1;
+          if (nextIndex < 0 || nextIndex >= pokemon.length) return;
+          setSelectedPokemon(pokemon[nextIndex]);
+        }}
+        hasPrev={(() => {
+          if (!selectedPokemon) return false;
+          const idx = pokemon.findIndex(p => p.pokemonId === selectedPokemon.pokemonId);
+          return idx > 0;
+        })()}
+        hasNext={(() => {
+          if (!selectedPokemon) return false;
+          const idx = pokemon.findIndex(p => p.pokemonId === selectedPokemon.pokemonId);
+          return idx >= 0 && idx < pokemon.length - 1;
+        })()}
       />
     </>
   );
