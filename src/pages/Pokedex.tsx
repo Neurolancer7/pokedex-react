@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, AlertCircle, RefreshCw } from "lucide-react";
@@ -29,6 +29,10 @@ export default function Pokedex() {
   const [selectedGeneration, setSelectedGeneration] = useState<number>();
   const [showFavorites, setShowFavorites] = useState(false);
   const [page, setPage] = useState(0);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  // Enable infinite scrolling after first manual "Load More"
+  const [isInfinite, setIsInfinite] = useState(false);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
   // Convex queries and mutations
   const pokemonData = useConvexQuery(api.pokemon.list, {
@@ -118,9 +122,41 @@ export default function Pokedex() {
     }
   };
 
+  useEffect(() => {
+    if (isLoadingMore && pokemonData !== undefined) {
+      setIsLoadingMore(false);
+    }
+  }, [pokemonData, isLoadingMore]);
+
   const handleLoadMore = () => {
+    setIsLoadingMore(true);
     setPage(prev => prev + 1);
   };
+
+  // Automatically trigger loading more when sentinel enters the viewport (infinite scroll)
+  useEffect(() => {
+    if (!isInfinite) return;
+    if (!(pokemonData?.hasMore && !showFavorites)) return;
+    if (showFavorites) return; // don't infinite scroll in favorites view
+    if (!loadMoreRef.current) return;
+
+    const el = loadMoreRef.current;
+    let fetching = false;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry.isIntersecting && !fetching && !isLoadingMore) {
+          fetching = true;
+          handleLoadMore();
+        }
+      },
+      { root: null, rootMargin: "0px 0px 200px 0px", threshold: 0.01 }
+    );
+
+    observer.observe(el);
+    return () => observer.unobserve(el);
+  }, [isInfinite, pokemonData?.hasMore, showFavorites, isLoadingMore]);
 
   // Get display data
   const displayPokemon = showFavorites ? (favorites || []) : (pokemonData?.pokemon || []);
@@ -224,17 +260,45 @@ export default function Pokedex() {
             animate={{ opacity: 1 }}
             className="text-center mt-8"
           >
-            <Button
-              onClick={handleLoadMore}
-              variant="outline"
-              className="gap-2"
-            >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                "Load More Pokémon"
-              )}
-            </Button>
+            {!isInfinite ? (
+              <Button
+                onClick={() => {
+                  // First click enables infinite scroll and triggers a load
+                  setIsInfinite(true);
+                  handleLoadMore();
+                }}
+                variant="outline"
+                className="gap-2"
+                disabled={isLoadingMore}
+                aria-busy={isLoadingMore}
+              >
+                {isLoadingMore ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Loading...
+                  </>
+                ) : (
+                  "Load More Pokémon"
+                )}
+              </Button>
+            ) : (
+              <div className="flex flex-col items-center gap-3">
+                <div className="text-sm text-muted-foreground">
+                  Infinite scroll enabled — keep scrolling to load more
+                </div>
+                <div
+                  ref={loadMoreRef}
+                  className="h-8 w-full"
+                  aria-hidden="true"
+                />
+                {isLoadingMore && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Loading more...
+                  </div>
+                )}
+              </div>
+            )}
           </motion.div>
         )}
       </main>
