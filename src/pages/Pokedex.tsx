@@ -266,6 +266,16 @@ export default function Pokedex() {
             favorites={favoriteIds}
             onFavoriteToggle={handleFavoriteToggle}
             isLoading={isLoading}
+            currentPage={!showFavorites ? page : undefined}
+            totalPages={!showFavorites ? totalPages : undefined}
+            onPageChange={
+              !showFavorites
+                ? (p) => {
+                    setPage(p);
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }
+                : undefined
+            }
           />
         </motion.div>
 
