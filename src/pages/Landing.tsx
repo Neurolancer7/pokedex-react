@@ -100,7 +100,7 @@ export default function Landing() {
       </motion.header>
 
       {/* Hero Section */}
-      <section className="container mx-auto px-4 py-20">
+      <section className="container mx-auto px-4 py-12 md:py-20">
         <div className="text-center max-w-4xl mx-auto">
           <motion.div
             initial={{ y: 30, opacity: 0 }}
@@ -116,7 +116,7 @@ export default function Landing() {
             initial={{ y: 30, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="text-5xl md:text-7xl font-bold tracking-tight mb-6 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent"
+            className="text-4xl md:text-7xl font-bold tracking-tight mb-6 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent"
           >
             The Ultimate
             <br />
@@ -127,7 +127,7 @@ export default function Landing() {
             initial={{ y: 30, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.3 }}
-            className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed"
+            className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed"
           >
             Discover, explore, and learn about all your favorite Pokémon with our comprehensive, 
             modern Pokédex featuring detailed stats, beautiful artwork, and powerful search capabilities.
@@ -137,7 +137,7 @@ export default function Landing() {
             initial={{ y: 30, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.4 }}
-            className="flex flex-col sm:flex-row gap-4 justify-center mb-16"
+            className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mb-12 md:mb-16"
           >
             <Button
               size="lg"
@@ -211,7 +211,7 @@ export default function Landing() {
       </section>
 
       {/* Features Section */}
-      <section className="container mx-auto px-4 py-20">
+      <section className="container mx-auto px-4 py-14 md:py-20">
         <motion.div
           initial={{ y: 30, opacity: 0 }}
           whileInView={{ y: 0, opacity: 1 }}
@@ -254,12 +254,12 @@ export default function Landing() {
       </section>
 
       {/* CTA Section */}
-      <section className="container mx-auto px-4 py-20">
+      <section className="container mx-auto px-4 py-14 md:py-20">
         <motion.div
           initial={{ y: 30, opacity: 0 }}
           whileInView={{ y: 0, opacity: 1 }}
           viewport={{ once: true }}
-          className="text-center bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-blue-500/10 rounded-2xl p-12"
+          className="text-center bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-blue-500/10 rounded-2xl p-8 md:p-12"
         >
           <div className="flex justify-center mb-6">
             <div className="flex -space-x-2">

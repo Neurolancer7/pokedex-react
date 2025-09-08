@@ -84,29 +84,31 @@ export function PokemonSearch({
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-2 items-center">
+      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar -mx-1 px-1">{/* mobile horizontal scroll */}
         {/* Generation Filter */}
-        <Select
-          value={selectedGeneration?.toString() || "all"}
-          onValueChange={handleGenerationChange}
-        >
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder="Generation" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Generations</SelectItem>
-            {POKEMON_GENERATIONS.map((gen) => (
-              <SelectItem key={gen.id} value={gen.id.toString()}>
-                {gen.name} ({gen.range})
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="shrink-0">
+          <Select
+            value={selectedGeneration?.toString() || "all"}
+            onValueChange={handleGenerationChange}
+          >
+            <SelectTrigger className="w-36 sm:w-44">{/* narrower on mobile */}
+              <SelectValue placeholder="Generation" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Generations</SelectItem>
+              {POKEMON_GENERATIONS.map((gen) => (
+                <SelectItem key={gen.id} value={gen.id.toString()}>
+                  {gen.name} ({gen.range})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         {/* Type Filter */}
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="outline" className="gap-2">
+            <Button variant="outline" className="gap-2 shrink-0">
               <Filter className="h-4 w-4" />
               Types
               {selectedTypes.length > 0 && (
@@ -146,17 +148,17 @@ export function PokemonSearch({
             variant="ghost"
             size="sm"
             onClick={clearFilters}
-            className="gap-2"
+            className="gap-2 shrink-0"
           >
             <X className="h-4 w-4" />
-            Clear
+            <span className="hidden sm:inline">Clear</span>
           </Button>
         )}
       </div>
 
       {/* Active Filters Display */}
       {selectedTypes.length > 0 && (
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap gap-1 overflow-x-auto no-scrollbar -mx-1 px-1">
           {selectedTypes.map((type) => (
             <Badge
               key={type}

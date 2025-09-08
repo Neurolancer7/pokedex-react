@@ -28,7 +28,7 @@ export function PokemonHeader({
       animate={{ y: 0, opacity: 1 }}
       className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b"
     >
-      <div className="container mx-auto px-4 py-4">
+      <div className="container mx-auto px-4 py-3 md:py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
           <motion.div
@@ -46,13 +46,14 @@ export function PokemonHeader({
           </motion.div>
 
           {/* Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 md:gap-2">
             {/* Data Refresh */}
             <Button
               variant="ghost"
               size="sm"
               onClick={onDataRefresh}
-              className="gap-2"
+              className="gap-2 px-2 sm:px-3"
+              aria-label="Refresh Data"
             >
               <Database className="h-4 w-4" />
               <span className="hidden sm:inline">Refresh Data</span>
@@ -64,7 +65,8 @@ export function PokemonHeader({
                 variant={showFavorites ? "default" : "ghost"}
                 size="sm"
                 onClick={onFavoritesToggle}
-                className="gap-2"
+                className="gap-2 px-2 sm:px-3"
+                aria-label={showFavorites ? "Show all Pokémon" : "Show favorites"}
               >
                 <Heart className="h-4 w-4" />
                 <span className="hidden sm:inline">
@@ -78,6 +80,8 @@ export function PokemonHeader({
               variant="ghost"
               size="sm"
               onClick={onThemeToggle}
+              className="px-2 sm:px-3"
+              aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
             >
               {isDark ? (
                 <Sun className="h-4 w-4" />
@@ -88,7 +92,7 @@ export function PokemonHeader({
 
             {/* Auth */}
             {isAuthenticated ? (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 md:gap-2">
                 <span className="text-sm text-muted-foreground hidden sm:inline">
                   {user?.name || user?.email || "Trainer"}
                 </span>
@@ -96,6 +100,7 @@ export function PokemonHeader({
                   variant="outline"
                   size="sm"
                   onClick={() => signOut()}
+                  className="px-2 sm:px-3"
                 >
                   Sign Out
                 </Button>
@@ -105,6 +110,7 @@ export function PokemonHeader({
                 variant="outline"
                 size="sm"
                 onClick={() => navigate("/auth")}
+                className="px-2 sm:px-3"
               >
                 Sign In
               </Button>
