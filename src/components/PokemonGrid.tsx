@@ -3,6 +3,7 @@ import { PokemonCard } from "./PokemonCard";
 import { PokemonDetailModal } from "./PokemonDetailModal";
 import type { Pokemon } from "@/lib/pokemon-api";
 import { useState } from "react";
+import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 
 interface PokemonGridProps {
@@ -25,6 +26,10 @@ export function PokemonGrid({
   onPageChange
 }: PokemonGridProps) {
   const [selectedPokemon, setSelectedPokemon] = useState<Pokemon | null>(null);
+  const [liveMsg, setLiveMsg] = useState<string>("");
+
+  // Track if we've already attempted an auto-fix to avoid loops
+  const autoFixedRef = useRef(false);
 
   // Add a safe page change utility with clamping + error handling
   const safeChange = (targetPage: number) => {
@@ -60,6 +65,47 @@ export function PokemonGrid({
       toast.error(msg);
     }
   };
+
+  // Auto-correct clearly invalid pagination states and announce them
+  useEffect(() => {
+    const canPaginate =
+      typeof currentPage === "number" &&
+      Number.isFinite(currentPage) &&
+      typeof totalPages === "number" &&
+      Number.isFinite(totalPages) &&
+      typeof onPageChange === "function" &&
+      totalPages > 0;
+
+    if (!canPaginate) return;
+
+    const max = Math.max(1, Math.floor(totalPages as number));
+    const cur = Math.floor(currentPage as number);
+
+    if (autoFixedRef.current) return;
+
+    if (cur < 1) {
+      autoFixedRef.current = true;
+      setLiveMsg("Invalid page detected. Moved to the first page.");
+      try {
+        onPageChange!(1);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "Failed to change page";
+        toast.error(msg);
+      }
+    } else if (cur > max) {
+      autoFixedRef.current = true;
+      setLiveMsg("Invalid page detected. Moved to the last page.");
+      try {
+        onPageChange!(max);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "Failed to change page";
+        toast.error(msg);
+      }
+    } else {
+      // valid state; clear previous message
+      setLiveMsg("");
+    }
+  }, [currentPage, totalPages, onPageChange]);
 
   // Helper to compute page numbers with ellipsis
   const getPageNumbers = (current: number, total: number): Array<number | "ellipsis"> => {
@@ -155,6 +201,11 @@ export function PokemonGrid({
         return (
           canPaginate && (
             <div className="mt-8 flex flex-col items-center gap-2 px-2">
+              {/* Accessible live region for pagination errors/auto-fixes */}
+              <div className="sr-only" aria-live="polite">
+                {liveMsg}
+              </div>
+
               {outOfBounds && (
                 <div
                   role="status"
