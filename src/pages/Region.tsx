@@ -139,6 +139,7 @@ export default function Region() {
         )}
 
         <PokemonGrid
+          key={`region-${generation ?? 'all'}-${page}`} // Force re-render on page/gen change
           pokemon={displayPokemon}
           favorites={favoriteIds}
           onFavoriteToggle={onFavoriteToggle}

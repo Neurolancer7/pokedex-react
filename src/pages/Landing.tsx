@@ -237,6 +237,7 @@ export default function Landing() {
         </div>
 
         <PokemonGrid
+          key={`landing-${page}`} // Force re-render on page change
           pokemon={pokemonData?.pokemon ?? []}
           favorites={[]} // favorites not shown on landing
           isLoading={pokemonData === undefined}
