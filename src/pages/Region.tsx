@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
@@ -28,10 +28,20 @@ export default function Region() {
 
   const { isAuthenticated } = useAuth();
 
-  // Fetch exactly 20 for the region
+  // Add pagination state for regions
+  const [page, setPage] = useState(1);
+  const LIMIT = 20;
+  const offset = (page - 1) * LIMIT;
+
+  // Reset page when generation changes
+  useEffect(() => {
+    setPage(1);
+  }, [generation]);
+
+  // Fetch paginated data for the region
   const regionData = useConvexQuery(api.pokemon.list, {
-    limit: 20,
-    offset: 0,
+    limit: LIMIT,
+    offset,
     generation: generation,
   });
 
@@ -46,6 +56,10 @@ export default function Region() {
   const favoriteIds = Array.isArray(favorites) ? favorites.map((f) => f.pokemonId) : [];
   const isLoading = regionData === undefined;
   const displayPokemon = regionData?.pokemon ?? [];
+
+  // Derive total pages
+  const totalItems = regionData?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalItems / LIMIT));
 
   const onFavoriteToggle = async (pokemonId: number) => {
     if (!isAuthenticated) {
@@ -104,7 +118,7 @@ export default function Region() {
           </h2>
           <p className="text-muted-foreground">
             {regionMeta
-              ? `Showing up to 20 Pokémon from ${regionMeta.name} (${regionMeta.range}).`
+              ? `Showing ${Math.min(LIMIT, Math.max(0, totalItems - offset))} of ${totalItems} Pokémon from ${regionMeta.name} (${regionMeta.range}).`
               : "Showing Pokémon"}
           </p>
         </motion.div>
@@ -129,6 +143,13 @@ export default function Region() {
           favorites={favoriteIds}
           onFavoriteToggle={onFavoriteToggle}
           isLoading={isLoading}
+          // Enable in-grid pagination controls
+          currentPage={page}
+          totalPages={totalPages}
+          onPageChange={(p) => {
+            setPage(p);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
         />
       </main>
     </div>
