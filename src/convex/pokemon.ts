@@ -28,29 +28,36 @@ export const list = query({
     } else {
       results = await ctx.db.query("pokemon").collect();
     }
-    
+
+    // De-duplicate by pokemonId (keep first by creation order)
+    const unique = new Map<number, any>();
+    for (const row of results) {
+      if (!unique.has(row.pokemonId)) unique.set(row.pokemonId, row);
+    }
+    results = Array.from(unique.values());
+
     // Apply search filter
     if (args.search) {
       const searchLower = args.search.toLowerCase();
-      results = results.filter(pokemon => 
+      results = results.filter(pokemon =>
         pokemon.name.toLowerCase().includes(searchLower) ||
         pokemon.pokemonId.toString().includes(searchLower)
       );
     }
-    
+
     // Apply type filter
     if (args.types && args.types.length > 0) {
       results = results.filter(pokemon =>
         args.types!.some(type => pokemon.types.includes(type))
       );
     }
-    
+
     // Sort by Pokemon ID
     results.sort((a, b) => a.pokemonId - b.pokemonId);
-    
+
     // Apply pagination
     const paginatedResults = results.slice(offset, offset + limit);
-    
+
     return {
       pokemon: paginatedResults,
       total: results.length,

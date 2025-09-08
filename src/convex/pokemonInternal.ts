@@ -22,9 +22,15 @@ export const cachePokemon = internalMutation({
   },
   handler: async (ctx, args) => {
     const { pokemonData, speciesData } = args;
-    
-    // Cache Pokemon
-    await ctx.db.insert("pokemon", {
+
+    // Upsert Pokemon (avoid creating duplicates)
+    const existingPokemonArr = await ctx.db
+      .query("pokemon")
+      .withIndex("by_pokemon_id", (q) => q.eq("pokemonId", pokemonData.id))
+      .collect();
+    const existingPokemon = existingPokemonArr[0] ?? null;
+
+    const pokemonDoc = {
       pokemonId: pokemonData.id,
       name: pokemonData.name,
       height: pokemonData.height,
@@ -47,14 +53,26 @@ export const cachePokemon = internalMutation({
       },
       moves: pokemonData.moves.slice(0, 20).map((m: any) => m.move.name), // Limit moves
       generation: getGenerationFromId(pokemonData.id),
-    });
-    
-    // Cache species data
+    };
+
+    if (existingPokemon) {
+      await ctx.db.patch(existingPokemon._id, pokemonDoc);
+    } else {
+      await ctx.db.insert("pokemon", pokemonDoc);
+    }
+
+    // Upsert species data (avoid creating duplicates)
     const flavorText = speciesData.flavor_text_entries
       ?.find((entry: any) => entry.language.name === "en")?.flavor_text
       ?.replace(/\f/g, " ") || "";
-    
-    await ctx.db.insert("pokemonSpecies", {
+
+    const existingSpeciesArr = await ctx.db
+      .query("pokemonSpecies")
+      .withIndex("by_pokemon_id", (q) => q.eq("pokemonId", pokemonData.id))
+      .collect();
+    const existingSpecies = existingSpeciesArr[0] ?? null;
+
+    const speciesDoc = {
       pokemonId: pokemonData.id,
       name: speciesData.name,
       flavorText,
@@ -63,10 +81,16 @@ export const cachePokemon = internalMutation({
       baseHappiness: speciesData.base_happiness,
       growthRate: speciesData.growth_rate?.name,
       habitat: speciesData.habitat?.name,
-      evolutionChainId: speciesData.evolution_chain?.url ? 
+      evolutionChainId: speciesData.evolution_chain?.url ?
         parseInt(speciesData.evolution_chain.url.split('/').slice(-2, -1)[0]) : undefined,
       generation: getGenerationFromId(pokemonData.id),
-    });
+    };
+
+    if (existingSpecies) {
+      await ctx.db.patch(existingSpecies._id, speciesDoc);
+    } else {
+      await ctx.db.insert("pokemonSpecies", speciesDoc);
+    }
   },
 });
 
@@ -81,7 +105,7 @@ export const cacheType = internalMutation({
       .query("pokemonTypes")
       .withIndex("by_name", (q) => q.eq("name", args.name))
       .unique();
-    
+
     if (!existing) {
       await ctx.db.insert("pokemonTypes", {
         name: args.name,
