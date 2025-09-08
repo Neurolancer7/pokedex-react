@@ -101,7 +101,7 @@ export default function Pokedex() {
   const handleDataRefresh = async () => {
     try {
       toast.promise(
-        fetchPokemonData({ limit: 151, offset: 0 }),
+        fetchPokemonData({ limit: 905, offset: 0 }),
         {
           loading: "Fetching Pokémon data...",
           success: (data) => {
