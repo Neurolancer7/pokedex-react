@@ -125,13 +125,13 @@ export function PokemonGrid({
         typeof totalPages === "number" &&
         typeof onPageChange === "function" &&
         totalPages > 1 && (
-          <div className="mt-8 flex justify-center">
+          <div className="mt-8 flex justify-center px-2">
             <nav
-              className="inline-flex items-center gap-1 bg-card/90 backdrop-blur-sm rounded-full p-1.5 shadow-md border"
+              className="inline-flex items-center gap-1 bg-card/90 backdrop-blur-sm rounded-full p-1.5 shadow-md border overflow-x-auto no-scrollbar"
               aria-label="pagination"
             >
               <button
-                className={`h-10 w-10 inline-flex items-center justify-center rounded-full text-sm transition-colors
+                className={`h-9 w-9 md:h-10 md:w-10 inline-flex items-center justify-center rounded-full text-sm transition-colors
                   ${currentPage === 1
                     ? "opacity-50 pointer-events-none"
                     : "hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"}
@@ -148,7 +148,7 @@ export function PokemonGrid({
                 p === "ellipsis" ? (
                   <span
                     key={`e-${idx}`}
-                    className="h-10 min-w-10 px-2 inline-flex items-center justify-center rounded-full text-sm text-muted-foreground"
+                    className="h-9 min-w-9 md:h-10 md:min-w-10 px-2 inline-flex items-center justify-center rounded-full text-sm text-muted-foreground"
                     aria-hidden="true"
                   >
                     …
@@ -157,7 +157,7 @@ export function PokemonGrid({
                   <button
                     key={p}
                     onClick={() => safeChange(p as number)}
-                    className={`h-10 min-w-10 px-3 inline-flex items-center justify-center rounded-full text-sm transition-colors
+                    className={`h-9 min-w-9 md:h-10 md:min-w-10 px-3 inline-flex items-center justify-center rounded-full text-sm transition-colors
                       ${p === currentPage
                         ? "bg-primary text-primary-foreground shadow-sm"
                         : "hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -172,7 +172,7 @@ export function PokemonGrid({
               )}
 
               <button
-                className={`h-10 w-10 inline-flex items-center justify-center rounded-full text-sm transition-colors
+                className={`h-9 w-9 md:h-10 md:w-10 inline-flex items-center justify-center rounded-full text-sm transition-colors
                   ${currentPage === totalPages
                     ? "opacity-50 pointer-events-none"
                     : "hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"}

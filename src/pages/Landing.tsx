@@ -52,13 +52,9 @@ export default function Landing() {
   const { isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
 
-  const [page, setPage] = useState(1);
-  const LIMIT = 20;
-  const offset = (page - 1) * LIMIT;
-
   const pokemonData = useConvexQuery(api.pokemon.list, {
-    limit: LIMIT,
-    offset,
+    limit: 20,
+    offset: 0,
   });
 
   const totalItems = pokemonData?.total ?? 0;
@@ -237,16 +233,9 @@ export default function Landing() {
         </div>
 
         <PokemonGrid
-          key={`landing-${page}`} // Force re-render on page change
           pokemon={pokemonData?.pokemon ?? []}
           favorites={[]} // favorites not shown on landing
           isLoading={pokemonData === undefined}
-          currentPage={page}
-          totalPages={totalPages}
-          onPageChange={(p) => {
-            setPage(p);
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          }}
         />
       </section>
 
