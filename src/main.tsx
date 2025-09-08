@@ -13,6 +13,7 @@ import Landing from "./pages/Landing.tsx";
 import Pokedex from "./pages/Pokedex.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import "./types/global.d.ts";
+import Region from "@/pages/Region.tsx";
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
 const queryClient = new QueryClient();
@@ -51,6 +52,7 @@ createRoot(document.getElementById("root")!).render(
             <Routes>
               <Route path="/" element={<Landing />} />
               <Route path="/pokedex" element={<Pokedex />} />
+              <Route path="/region/:gen" element={<Region />} />
               <Route path="/auth" element={<AuthPage redirectAfterAuth="/pokedex" />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

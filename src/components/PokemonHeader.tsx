@@ -7,6 +7,9 @@ import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
+import { NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuList } from "@/components/ui/navigation-menu";
+import { Badge } from "@/components/ui/badge";
+import { POKEMON_GENERATIONS } from "@/lib/pokemon-api";
 
 interface PokemonHeaderProps {
   isDark: boolean;
@@ -63,6 +66,30 @@ export function PokemonHeader({
 
           {/* Actions - Desktop */}
           <div className="hidden sm:flex items-center gap-1.5 md:gap-2">
+            {/* Simple region nav on desktop */}
+            <NavigationMenu>
+              <NavigationMenuList>
+                <NavigationMenuItem>
+                  <NavigationMenuLink
+                    className="px-2 py-1 text-sm text-muted-foreground hover:text-foreground"
+                    onClick={() => navigate("/pokedex")}
+                  >
+                    All Pokémon
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+                {POKEMON_GENERATIONS.map((g) => (
+                  <NavigationMenuItem key={g.id}>
+                    <NavigationMenuLink
+                      className="px-2 py-1 text-sm text-muted-foreground hover:text-foreground"
+                      onClick={() => navigate(`/region/${g.id}`)}
+                    >
+                      {g.name}
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+                ))}
+              </NavigationMenuList>
+            </NavigationMenu>
+
             {/* Data Refresh */}
             <Button
               variant="ghost"
@@ -209,6 +236,34 @@ export function PokemonHeader({
                     {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
                     {isDark ? "Light Mode" : "Dark Mode"}
                   </Button>
+
+                  {/* Regions */}
+                  <div className="px-1 text-xs font-medium text-muted-foreground">Regions</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      variant="ghost"
+                      className="justify-start"
+                      onClick={() => {
+                        navigate("/pokedex");
+                        setMenuOpen(false);
+                      }}
+                    >
+                      All Pokémon
+                    </Button>
+                    {POKEMON_GENERATIONS.map((g) => (
+                      <Button
+                        key={g.id}
+                        variant="ghost"
+                        className="justify-start"
+                        onClick={() => {
+                          navigate(`/region/${g.id}`);
+                          setMenuOpen(false);
+                        }}
+                      >
+                        {g.name}
+                      </Button>
+                    ))}
+                  </div>
 
                   <Separator className="my-2" />
 
