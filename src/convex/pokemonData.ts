@@ -28,39 +28,51 @@ export const fetchAndCachePokemon = action({
       // Cache types first
       await cacheTypes(ctx);
       
-      // Process each Pokemon
-      for (const pokemon of listData.results) {
-        const pokemonId = parseInt(pokemon.url.split('/').slice(-2, -1)[0]);
-        
-        // Check if already cached
-        const existing = await ctx.runQuery(internal.pokemonInternal.getByIdInternal, { pokemonId });
-        if (existing) continue;
-        
-        // Fetch detailed Pokemon data
-        const pokemonResponse = await fetch(pokemon.url);
-        if (!pokemonResponse.ok) {
-          throw new Error(`PokéAPI pokemon request failed (id ${pokemonId}): ${pokemonResponse.status} ${pokemonResponse.statusText}`);
-        }
-        const pokemonData = await pokemonResponse.json();
-        
-        // Fetch species data
-        const speciesResponse = await fetch(pokemonData.species.url);
-        if (!speciesResponse.ok) {
-          throw new Error(`PokéAPI species request failed (id ${pokemonId}): ${speciesResponse.status} ${speciesResponse.statusText}`);
-        }
-        const speciesData = await speciesResponse.json();
-        
-        // Cache Pokemon
-        await ctx.runMutation(internal.pokemonInternal.cachePokemon, {
-          pokemonData,
-          speciesData,
-        });
-        
-        // Add small delay to respect rate limits
-        await new Promise(resolve => setTimeout(resolve, 100));
+      // Process each Pokemon with controlled concurrency
+      const results: Array<{ name: string; url: string }> = listData.results || [];
+      if (results.length === 0) {
+        return { success: true, cached: 0 };
+      }
+
+      const CONCURRENCY = 8; // balance speed and API friendliness
+      for (let i = 0; i < results.length; i += CONCURRENCY) {
+        const batch = results.slice(i, i + CONCURRENCY);
+
+        await Promise.all(
+          batch.map(async (pokemon) => {
+            const pokemonId = parseInt(pokemon.url.split('/').slice(-2, -1)[0]);
+            
+            // Check if already cached
+            const existing = await ctx.runQuery(internal.pokemonInternal.getByIdInternal, { pokemonId });
+            if (existing) return;
+            
+            // Fetch detailed Pokemon data
+            const pokemonResponse = await fetch(pokemon.url);
+            if (!pokemonResponse.ok) {
+              throw new Error(`PokéAPI pokemon request failed (id ${pokemonId}): ${pokemonResponse.status} ${pokemonResponse.statusText}`);
+            }
+            const pokemonData = await pokemonResponse.json();
+            
+            // Fetch species data
+            const speciesResponse = await fetch(pokemonData.species.url);
+            if (!speciesResponse.ok) {
+              throw new Error(`PokéAPI species request failed (id ${pokemonId}): ${speciesResponse.status} ${speciesResponse.statusText}`);
+            }
+            const speciesData = await speciesResponse.json();
+            
+            // Cache Pokemon
+            await ctx.runMutation(internal.pokemonInternal.cachePokemon, {
+              pokemonData,
+              speciesData,
+            });
+          })
+        );
+
+        // Tiny delay between batches to avoid spikes
+        await new Promise(resolve => setTimeout(resolve, 150));
       }
       
-      return { success: true, cached: listData.results.length };
+      return { success: true, cached: results.length };
     } catch (error) {
       console.error("Error fetching Pokemon data:", error);
       // Provide clean error message

@@ -5,6 +5,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -47,6 +48,9 @@ export function PokemonDetailModal({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] p-0">
+        <DialogDescription className="sr-only">
+          Detailed information about {formatPokemonName(pokemon.name)}
+        </DialogDescription>
         <ScrollArea className="max-h-[90vh]">
           <div className="p-6">
             {/* Header */}
