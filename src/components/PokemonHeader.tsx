@@ -42,8 +42,13 @@ export function PokemonHeader({
             className="flex items-center gap-3 cursor-pointer"
             onClick={() => navigate("/")}
           >
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">P</span>
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center overflow-hidden">
+              <img
+                src="https://harmless-tapir-303.convex.cloud/api/storage/dfdec238-dbb0-44cd-9147-50ae677b8144"
+                alt="Pokédex logo"
+                className="w-8 h-8 object-contain"
+                loading="lazy"
+              />
             </div>
             <div>
               <h1 className="text-xl font-bold tracking-tight">Pokédex</h1>
