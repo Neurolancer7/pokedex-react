@@ -13,6 +13,15 @@ import { PokemonSearch } from "@/components/PokemonSearch";
 import { PokemonGrid } from "@/components/PokemonGrid";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 export default function Pokedex() {
   const { isAuthenticated } = useAuth();
@@ -28,21 +37,14 @@ export default function Pokedex() {
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [selectedGeneration, setSelectedGeneration] = useState<number>();
   const [showFavorites, setShowFavorites] = useState(false);
-  const [page, setPage] = useState(0);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Add local accumulation of loaded pokemon and constants
-  const [loadedPokemon, setLoadedPokemon] = useState<any[]>([]);
   const INITIAL_LIMIT = 20;
-  const LOAD_MORE_LIMIT = 40;
 
-  // Compute limit/offset to fetch: first page 20, subsequent pages 40 each
-  const computedLimit = page === 0 ? INITIAL_LIMIT : LOAD_MORE_LIMIT;
-  const computedOffset =
-    page === 0 ? 0 : INITIAL_LIMIT + (page - 1) * LOAD_MORE_LIMIT;
+  const computedLimit = INITIAL_LIMIT;
+  const computedOffset = (page - 1) * INITIAL_LIMIT;
 
-  // Convex queries and mutations
   const pokemonData = useConvexQuery(api.pokemon.list, {
     limit: computedLimit,
     offset: computedOffset,
@@ -78,17 +80,13 @@ export default function Pokedex() {
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    // Reset page and accumulation on new search
-    setPage(0);
-    setLoadedPokemon([]);
+    setPage(1);
   };
 
   const handleFilterChange = (filters: { types: string[]; generation?: number }) => {
     setSelectedTypes(filters.types);
     setSelectedGeneration(filters.generation);
-    // Reset page and accumulation on new filters
-    setPage(0);
-    setLoadedPokemon([]);
+    setPage(1);
   };
 
   const handleFavoriteToggle = async (pokemonId: number) => {
@@ -139,58 +137,52 @@ export default function Pokedex() {
     }
   };
 
-  useEffect(() => {
-    if (isLoadingMore && pokemonData !== undefined) {
-      setIsLoadingMore(false);
-    }
-  }, [pokemonData, isLoadingMore]);
+  
 
-  const handleLoadMore = () => {
-    setIsLoadingMore(true);
-    setPage(prev => prev + 1);
-  };
+  
 
-  // Accumulate fetched pages into loadedPokemon when not in favorites view
-  useEffect(() => {
-    if (showFavorites) return;
-    if (!pokemonData?.pokemon) return;
+  
 
-    setLoadedPokemon(prev => {
-      // For first page, replace; otherwise append and de-dup by pokemonId
-      const next = page === 0 ? pokemonData.pokemon : [...prev, ...pokemonData.pokemon];
-      const unique = new Map<number, any>();
-      for (const p of next) {
-        if (!unique.has(p.pokemonId)) unique.set(p.pokemonId, p);
-      }
-      return Array.from(unique.values());
-    });
-  }, [pokemonData?.pokemon, showFavorites, page]);
+  
 
-  // Ensure first page shows immediately even if accumulator missed
-  useEffect(() => {
-    if (showFavorites) return;
-    if (page !== 0) return;
-    if (loadedPokemon.length > 0) return;
-    if (!pokemonData?.pokemon || pokemonData.pokemon.length === 0) return;
-    setLoadedPokemon(pokemonData.pokemon);
-  }, [pokemonData?.pokemon, showFavorites, page, loadedPokemon.length]);
-
-  // Reset accumulation when toggling favorites view ON
   useEffect(() => {
     if (!showFavorites) {
       // when coming back from favorites, reset to first page
-      setPage(0);
-      setLoadedPokemon([]);
+      setPage(1);
     }
   }, [showFavorites]);
 
-  // Get display data
-  const displayPokemon = showFavorites
-    ? (favorites || [])
-    : (page === 0 ? (pokemonData?.pokemon || []) : loadedPokemon);
+  const displayPokemon = showFavorites ? (favorites || []) : (pokemonData?.pokemon || []);
   const favoriteIds = Array.isArray(favorites) ? favorites.map((f) => f.pokemonId) : [];
-  const isLoading = pokemonData === undefined && page === 0;
-  const hasMore = !showFavorites && (pokemonData?.hasMore ?? false);
+  const isLoading = pokemonData === undefined && !showFavorites;
+
+  const totalItems = showFavorites ? (favorites?.length ?? 0) : (pokemonData?.total ?? 0);
+  const totalPages = Math.max(1, Math.ceil(totalItems / INITIAL_LIMIT));
+
+  const getPageNumbers = (current: number, total: number): Array<number | "ellipsis"> => {
+    const pages: Array<number | "ellipsis"> = [];
+    const add = (p: number | "ellipsis") => pages.push(p);
+
+    const start = Math.max(2, current - 1);
+    const end = Math.min(total - 1, current + 1);
+
+    add(1);
+    if (start > 2) add("ellipsis");
+    for (let p = start; p <= end; p++) add(p);
+    if (end < total - 1) add("ellipsis");
+    if (total > 1) add(total);
+
+    if (current === 2) pages.splice(1, 0, 2);
+    if (current === total - 1 && total > 2) pages.splice(pages.length - 1, 0, total - 1);
+
+    const seen = new Set<string>();
+    return pages.filter((p) => {
+      const key = String(p);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -204,7 +196,6 @@ export default function Pokedex() {
       />
 
       <main className="container mx-auto px-4 py-8">
-        {/* Search and Filters */}
         {!showFavorites && (
           <motion.div
             initial={{ y: 20, opacity: 0 }}
@@ -222,7 +213,6 @@ export default function Pokedex() {
           </motion.div>
         )}
 
-        {/* Results Header */}
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -245,7 +235,6 @@ export default function Pokedex() {
           </div>
         </motion.div>
 
-        {/* Empty State for No Data */}
         {!isLoading && displayPokemon.length === 0 && !pokemonData?.total && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -268,7 +257,6 @@ export default function Pokedex() {
           </motion.div>
         )}
 
-        {/* Pokemon Grid */}
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -282,31 +270,65 @@ export default function Pokedex() {
           />
         </motion.div>
 
-        {/* Load More */}
-        {hasMore && !isLoading && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center mt-8"
-          >
-            <Button
-              onClick={handleLoadMore}
-              variant="outline"
-              className="gap-2"
-              disabled={isLoadingMore}
-              aria-busy={isLoadingMore}
-            >
-              {isLoadingMore ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Loading...
-                </>
-              ) : (
-                "Show More"
-              )}
-            </Button>
-          </motion.div>
-        )}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="mt-8"
+        >
+          {!showFavorites && totalPages > 1 && (
+            <div className="flex justify-center">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setPage((p) => Math.max(1, p - 1));
+                      }}
+                      aria-disabled={page === 1}
+                      className={page === 1 ? "pointer-events-none opacity-50" : ""}
+                    />
+                  </PaginationItem>
+
+                  {getPageNumbers(page, totalPages).map((p, idx) =>
+                    p === "ellipsis" ? (
+                      <PaginationItem key={`e-${idx}`}>
+                        <PaginationEllipsis />
+                      </PaginationItem>
+                    ) : (
+                      <PaginationItem key={p}>
+                        <PaginationLink
+                          href="#"
+                          isActive={p === page}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setPage(p as number);
+                            window.scrollTo({ top: 0, behavior: "smooth" });
+                          }}
+                        >
+                          {p}
+                        </PaginationLink>
+                      </PaginationItem>
+                    )
+                  )}
+
+                  <PaginationItem>
+                    <PaginationNext
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setPage((p) => Math.min(totalPages, p + 1));
+                      }}
+                      aria-disabled={page === totalPages}
+                      className={page === totalPages ? "pointer-events-none opacity-50" : ""}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
+        </motion.div>
       </main>
     </div>
   );
