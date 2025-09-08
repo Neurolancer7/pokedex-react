@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, AlertCircle, RefreshCw } from "lucide-react";
@@ -30,14 +30,21 @@ export default function Pokedex() {
   const [showFavorites, setShowFavorites] = useState(false);
   const [page, setPage] = useState(0);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  // Enable infinite scrolling after first manual "Load More"
-  const [isInfinite, setIsInfinite] = useState(false);
-  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+
+  // Add local accumulation of loaded pokemon and constants
+  const [loadedPokemon, setLoadedPokemon] = useState<any[]>([]);
+  const INITIAL_LIMIT = 20;
+  const LOAD_MORE_LIMIT = 40;
+
+  // Compute limit/offset to fetch: first page 20, subsequent pages 40 each
+  const computedLimit = page === 0 ? INITIAL_LIMIT : LOAD_MORE_LIMIT;
+  const computedOffset =
+    page === 0 ? 0 : INITIAL_LIMIT + (page - 1) * LOAD_MORE_LIMIT;
 
   // Convex queries and mutations
   const pokemonData = useConvexQuery(api.pokemon.list, {
-    limit: 20,
-    offset: page * 20,
+    limit: computedLimit,
+    offset: computedOffset,
     search: searchQuery || undefined,
     types: selectedTypes.length > 0 ? selectedTypes : undefined,
     generation: selectedGeneration,
@@ -70,13 +77,17 @@ export default function Pokedex() {
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
+    // Reset page and accumulation on new search
     setPage(0);
+    setLoadedPokemon([]);
   };
 
   const handleFilterChange = (filters: { types: string[]; generation?: number }) => {
     setSelectedTypes(filters.types);
     setSelectedGeneration(filters.generation);
+    // Reset page and accumulation on new filters
     setPage(0);
+    setLoadedPokemon([]);
   };
 
   const handleFavoriteToggle = async (pokemonId: number) => {
@@ -133,36 +144,47 @@ export default function Pokedex() {
     setPage(prev => prev + 1);
   };
 
-  // Automatically trigger loading more when sentinel enters the viewport (infinite scroll)
+  // Accumulate fetched pages into loadedPokemon when not in favorites view
   useEffect(() => {
-    if (!isInfinite) return;
-    if (!(pokemonData?.hasMore && !showFavorites)) return;
-    if (showFavorites) return; // don't infinite scroll in favorites view
-    if (!loadMoreRef.current) return;
+    if (showFavorites) return;
+    if (!pokemonData?.pokemon) return;
 
-    const el = loadMoreRef.current;
-    let fetching = false;
+    setLoadedPokemon(prev => {
+      // For first page, replace; otherwise append and de-dup by pokemonId
+      const next = page === 0 ? pokemonData.pokemon : [...prev, ...pokemonData.pokemon];
+      const unique = new Map<number, any>();
+      for (const p of next) {
+        if (!unique.has(p.pokemonId)) unique.set(p.pokemonId, p);
+      }
+      return Array.from(unique.values());
+    });
+  }, [pokemonData?.pokemon, showFavorites, page]);
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        if (entry.isIntersecting && !fetching && !isLoadingMore) {
-          fetching = true;
-          handleLoadMore();
-        }
-      },
-      { root: null, rootMargin: "0px 0px 200px 0px", threshold: 0.01 }
-    );
+  // Ensure first page shows immediately even if accumulator missed
+  useEffect(() => {
+    if (showFavorites) return;
+    if (page !== 0) return;
+    if (loadedPokemon.length > 0) return;
+    if (!pokemonData?.pokemon || pokemonData.pokemon.length === 0) return;
+    setLoadedPokemon(pokemonData.pokemon);
+  }, [pokemonData?.pokemon, showFavorites, page, loadedPokemon.length]);
 
-    observer.observe(el);
-    return () => observer.unobserve(el);
-  }, [isInfinite, pokemonData?.hasMore, showFavorites, isLoadingMore]);
+  // Reset accumulation when toggling favorites view ON
+  useEffect(() => {
+    if (!showFavorites) {
+      // when coming back from favorites, reset to first page
+      setPage(0);
+      setLoadedPokemon([]);
+    }
+  }, [showFavorites]);
 
   // Get display data
-  const displayPokemon = showFavorites ? (favorites || []) : (pokemonData?.pokemon || []);
+  const displayPokemon = showFavorites
+    ? (favorites || [])
+    : (page === 0 ? (pokemonData?.pokemon || []) : loadedPokemon);
   const favoriteIds = Array.isArray(favorites) ? favorites.map((f) => f.pokemonId) : [];
-  const isLoading = pokemonData === undefined;
-  const hasMore = pokemonData?.hasMore && !showFavorites;
+  const isLoading = pokemonData === undefined && page === 0;
+  const hasMore = !showFavorites && (pokemonData?.hasMore ?? false);
 
   return (
     <div className="min-h-screen bg-background">
@@ -260,45 +282,22 @@ export default function Pokedex() {
             animate={{ opacity: 1 }}
             className="text-center mt-8"
           >
-            {!isInfinite ? (
-              <Button
-                onClick={() => {
-                  // First click enables infinite scroll and triggers a load
-                  setIsInfinite(true);
-                  handleLoadMore();
-                }}
-                variant="outline"
-                className="gap-2"
-                disabled={isLoadingMore}
-                aria-busy={isLoadingMore}
-              >
-                {isLoadingMore ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Loading...
-                  </>
-                ) : (
-                  "Load More Pokémon"
-                )}
-              </Button>
-            ) : (
-              <div className="flex flex-col items-center gap-3">
-                <div className="text-sm text-muted-foreground">
-                  Infinite scroll enabled — keep scrolling to load more
-                </div>
-                <div
-                  ref={loadMoreRef}
-                  className="h-8 w-full"
-                  aria-hidden="true"
-                />
-                {isLoadingMore && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Loading more...
-                  </div>
-                )}
-              </div>
-            )}
+            <Button
+              onClick={handleLoadMore}
+              variant="outline"
+              className="gap-2"
+              disabled={isLoadingMore}
+              aria-busy={isLoadingMore}
+            >
+              {isLoadingMore ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading...
+                </>
+              ) : (
+                "Load 40 More Pokémon"
+              )}
+            </Button>
           </motion.div>
         )}
       </main>
