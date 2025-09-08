@@ -127,18 +127,19 @@ export function PokemonGrid({
         totalPages > 1 && (
           <div className="mt-8 flex justify-center">
             <nav
-              className="flex items-center gap-1.5 bg-card/60 backdrop-blur rounded-full p-1.5 shadow-sm border"
+              className="inline-flex items-center gap-1 bg-card/90 backdrop-blur-sm rounded-full p-1.5 shadow-md border"
               aria-label="pagination"
             >
               <button
-                className={`h-9 w-9 inline-flex items-center justify-center rounded-full text-sm transition-colors
+                className={`h-10 w-10 inline-flex items-center justify-center rounded-full text-sm transition-colors
                   ${currentPage === 1
                     ? "opacity-50 pointer-events-none"
-                    : "hover:bg-accent/60"}
+                    : "hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"}
                 `}
                 onClick={() => safeChange(currentPage - 1)}
                 aria-label="Previous page"
                 aria-disabled={currentPage === 1}
+                title="Previous"
               >
                 ‹
               </button>
@@ -147,7 +148,8 @@ export function PokemonGrid({
                 p === "ellipsis" ? (
                   <span
                     key={`e-${idx}`}
-                    className="h-9 min-w-9 px-2 inline-flex items-center justify-center rounded-full text-sm text-muted-foreground"
+                    className="h-10 min-w-10 px-2 inline-flex items-center justify-center rounded-full text-sm text-muted-foreground"
+                    aria-hidden="true"
                   >
                     …
                   </span>
@@ -155,13 +157,14 @@ export function PokemonGrid({
                   <button
                     key={p}
                     onClick={() => safeChange(p as number)}
-                    className={`h-9 min-w-9 px-3 inline-flex items-center justify-center rounded-full text-sm transition-colors
+                    className={`h-10 min-w-10 px-3 inline-flex items-center justify-center rounded-full text-sm transition-colors
                       ${p === currentPage
-                        ? "bg-primary text-primary-foreground"
-                        : "hover:bg-accent/60"
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       }`}
                     aria-current={p === currentPage ? "page" : undefined}
                     aria-label={`Page ${p}`}
+                    title={`Page ${p}`}
                   >
                     {p}
                   </button>
@@ -169,14 +172,15 @@ export function PokemonGrid({
               )}
 
               <button
-                className={`h-9 w-9 inline-flex items-center justify-center rounded-full text-sm transition-colors
+                className={`h-10 w-10 inline-flex items-center justify-center rounded-full text-sm transition-colors
                   ${currentPage === totalPages
                     ? "opacity-50 pointer-events-none"
-                    : "hover:bg-accent/60"}
+                    : "hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"}
                 `}
                 onClick={() => safeChange(currentPage + 1)}
                 aria-label="Next page"
                 aria-disabled={currentPage === totalPages}
+                title="Next"
               >
                 ›
               </button>
