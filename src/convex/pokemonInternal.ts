@@ -5,10 +5,12 @@ import { internalQuery, internalMutation } from "./_generated/server";
 export const getByIdInternal = internalQuery({
   args: { pokemonId: v.number() },
   handler: async (ctx, args) => {
-    return await ctx.db
+    // Return the first matching document if duplicates exist
+    const results = await ctx.db
       .query("pokemon")
       .withIndex("by_pokemon_id", (q) => q.eq("pokemonId", args.pokemonId))
-      .unique();
+      .collect();
+    return results[0] ?? null;
   },
 });
 

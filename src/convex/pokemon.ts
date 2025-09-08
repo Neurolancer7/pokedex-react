@@ -63,18 +63,22 @@ export const list = query({
 export const getById = query({
   args: { pokemonId: v.number() },
   handler: async (ctx, args) => {
-    const pokemon = await ctx.db
+    // Safely get first match instead of unique()
+    const pokemonResults = await ctx.db
       .query("pokemon")
       .withIndex("by_pokemon_id", (q) => q.eq("pokemonId", args.pokemonId))
-      .unique();
+      .collect();
+    const pokemon = pokemonResults[0] ?? null;
     
     if (!pokemon) return null;
-    
-    const species = await ctx.db
+
+    // Species may also have duplicates, take first match
+    const speciesResults = await ctx.db
       .query("pokemonSpecies")
       .withIndex("by_pokemon_id", (q) => q.eq("pokemonId", args.pokemonId))
-      .unique();
-    
+      .collect();
+    const species = speciesResults[0] ?? null;
+
     return {
       ...pokemon,
       species,
@@ -157,10 +161,11 @@ export const getFavorites = query({
     const pokemonIds = favorites.map(f => f.pokemonId);
     const pokemon = await Promise.all(
       pokemonIds.map(async (id) => {
-        return await ctx.db
+        const results = await ctx.db
           .query("pokemon")
           .withIndex("by_pokemon_id", (q) => q.eq("pokemonId", id))
-          .unique();
+          .collect();
+        return results[0] ?? null;
       })
     );
     
