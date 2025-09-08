@@ -47,7 +47,11 @@ export function PokemonHeader({
                 src="https://harmless-tapir-303.convex.cloud/api/storage/dfdec238-dbb0-44cd-9147-50ae677b8144"
                 alt="Pokédex logo"
                 className="w-8 h-8 object-contain"
-                loading="lazy"
+                loading="eager"
+                decoding="async"
+                fetchPriority="high"
+                width={32}
+                height={32}
               />
             </div>
             <div>
