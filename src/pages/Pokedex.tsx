@@ -295,7 +295,7 @@ export default function Pokedex() {
                   Loading...
                 </>
               ) : (
-                "Load 40 More Pokémon"
+                "Show More"
               )}
             </Button>
           </motion.div>
