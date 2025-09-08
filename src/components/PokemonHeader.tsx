@@ -3,6 +3,7 @@ import { Moon, Sun, Heart, Database } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "react-router";
+import { Loader2 } from "lucide-react";
 
 interface PokemonHeaderProps {
   isDark: boolean;
@@ -10,6 +11,7 @@ interface PokemonHeaderProps {
   showFavorites: boolean;
   onFavoritesToggle: () => void;
   onDataRefresh: () => void;
+  isRefreshing?: boolean;
 }
 
 export function PokemonHeader({
@@ -18,6 +20,7 @@ export function PokemonHeader({
   showFavorites,
   onFavoritesToggle,
   onDataRefresh,
+  isRefreshing = false,
 }: PokemonHeaderProps) {
   const { isAuthenticated, user, signOut } = useAuth();
   const navigate = useNavigate();
@@ -54,9 +57,19 @@ export function PokemonHeader({
               onClick={onDataRefresh}
               className="gap-2 px-2 sm:px-3"
               aria-label="Refresh Data"
+              disabled={isRefreshing}
             >
-              <Database className="h-4 w-4" />
-              <span className="hidden sm:inline">Refresh Data</span>
+              {isRefreshing ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="hidden sm:inline">Refreshing...</span>
+                </>
+              ) : (
+                <>
+                  <Database className="h-4 w-4" />
+                  <span className="hidden sm:inline">Refresh Data</span>
+                </>
+              )}
             </Button>
 
             {/* Favorites Toggle */}

@@ -30,6 +30,7 @@ export default function Pokedex() {
   const [showFavorites, setShowFavorites] = useState(false);
   const [page, setPage] = useState(0);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Add local accumulation of loaded pokemon and constants
   const [loadedPokemon, setLoadedPokemon] = useState<any[]>([]);
@@ -115,6 +116,8 @@ export default function Pokedex() {
 
   const handleDataRefresh = async () => {
     try {
+      // Start loading state
+      setIsRefreshing(true);
       toast.promise(
         fetchPokemonData({ limit: 1025, offset: 0 }),
         {
@@ -130,6 +133,9 @@ export default function Pokedex() {
       console.error("Error refreshing data:", error);
       const message = error instanceof Error ? error.message : "Unexpected error while refreshing data";
       toast.error(message);
+    } finally {
+      // Ensure loading state is cleared
+      setIsRefreshing(false);
     }
   };
 
@@ -194,6 +200,7 @@ export default function Pokedex() {
         showFavorites={showFavorites}
         onFavoritesToggle={() => setShowFavorites(!showFavorites)}
         onDataRefresh={handleDataRefresh}
+        isRefreshing={isRefreshing}
       />
 
       <main className="container mx-auto px-4 py-8">
