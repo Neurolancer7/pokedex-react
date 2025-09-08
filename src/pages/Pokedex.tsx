@@ -141,8 +141,6 @@ export default function Pokedex() {
 
   
 
-  
-
   useEffect(() => {
     if (!showFavorites) {
       // when coming back from favorites, reset to first page
@@ -222,13 +220,6 @@ export default function Pokedex() {
               <h2 className="text-2xl font-bold tracking-tight">
                 {showFavorites ? "Your Favorites" : "Pokémon"}
               </h2>
-              <p className="text-muted-foreground">
-                {showFavorites
-                  ? `${displayPokemon.length} favorite Pokémon`
-                  : pokemonData
-                  ? `${pokemonData.total} Pokémon found`
-                  : "Loading..."}
-              </p>
             </div>
           </div>
         </motion.div>

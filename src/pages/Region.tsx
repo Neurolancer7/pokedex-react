@@ -116,11 +116,6 @@ export default function Region() {
           <h2 className="text-2xl font-bold tracking-tight">
             {regionMeta ? `${regionMeta.name} Region` : "All Pokémon"}
           </h2>
-          <p className="text-muted-foreground">
-            {regionMeta
-              ? `Showing ${Math.min(LIMIT, Math.max(0, totalItems - offset))} of ${totalItems} Pokémon from ${regionMeta.name} (${regionMeta.range}).`
-              : "Showing Pokémon"}
-          </p>
         </motion.div>
 
         {!isLoading && displayPokemon.length === 0 && (

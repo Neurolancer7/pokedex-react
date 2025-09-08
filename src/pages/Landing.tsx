@@ -225,9 +225,6 @@ export default function Landing() {
       <section className="container mx-auto px-4 py-12 md:py-16">
         <div className="mb-6 md:mb-8 text-center">
           <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Explore Pokémon</h2>
-          <p className="text-muted-foreground">
-            Browse the Pokédex — {pokemonData ? pokemonData.total : "…"} entries
-          </p>
         </div>
 
         <PokemonGrid
