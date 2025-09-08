@@ -143,8 +143,6 @@ export default function Pokedex() {
 
   
 
-  
-
   useEffect(() => {
     if (!showFavorites) {
       // when coming back from favorites, reset to first page
@@ -263,10 +261,11 @@ export default function Pokedex() {
           transition={{ delay: 0.3 }}
         >
           <PokemonGrid
+            key={`${showFavorites ? "fav" : "all"}-${page}-${searchQuery}-${selectedTypes.join(",")}-${selectedGeneration ?? "all"}`}
             pokemon={displayPokemon}
             favorites={favoriteIds}
             onFavoriteToggle={handleFavoriteToggle}
-            isLoading={isLoading && page === 0}
+            isLoading={isLoading}
           />
         </motion.div>
 
