@@ -19,6 +19,10 @@ export const fetchAndCachePokemon = action({
       const listResponse = await fetch(
         `https://pokeapi.co/api/v2/pokemon?limit=${limit}&offset=${offset}`
       );
+      // Add response.ok check
+      if (!listResponse.ok) {
+        throw new Error(`PokéAPI list request failed: ${listResponse.status} ${listResponse.statusText}`);
+      }
       const listData = await listResponse.json();
       
       // Cache types first
@@ -34,10 +38,16 @@ export const fetchAndCachePokemon = action({
         
         // Fetch detailed Pokemon data
         const pokemonResponse = await fetch(pokemon.url);
+        if (!pokemonResponse.ok) {
+          throw new Error(`PokéAPI pokemon request failed (id ${pokemonId}): ${pokemonResponse.status} ${pokemonResponse.statusText}`);
+        }
         const pokemonData = await pokemonResponse.json();
         
         // Fetch species data
         const speciesResponse = await fetch(pokemonData.species.url);
+        if (!speciesResponse.ok) {
+          throw new Error(`PokéAPI species request failed (id ${pokemonId}): ${speciesResponse.status} ${speciesResponse.statusText}`);
+        }
         const speciesData = await speciesResponse.json();
         
         // Cache Pokemon
@@ -53,13 +63,19 @@ export const fetchAndCachePokemon = action({
       return { success: true, cached: listData.results.length };
     } catch (error) {
       console.error("Error fetching Pokemon data:", error);
-      throw new Error(`Failed to fetch Pokemon data: ${error}`);
+      // Provide clean error message
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to fetch Pokemon data: ${message}`);
     }
   },
 });
 
 async function cacheTypes(ctx: any) {
   const typesResponse = await fetch("https://pokeapi.co/api/v2/type");
+  // Add response.ok check for types endpoint
+  if (!typesResponse.ok) {
+    throw new Error(`PokéAPI types request failed: ${typesResponse.status} ${typesResponse.statusText}`);
+  }
   const typesData = await typesResponse.json();
   
   const typeColors: Record<string, string> = {

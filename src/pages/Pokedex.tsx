@@ -93,7 +93,8 @@ export default function Pokedex() {
         toast.success("Added to favorites");
       }
     } catch (error) {
-      toast.error("Failed to update favorites");
+      const message = error instanceof Error ? error.message : "Failed to update favorites";
+      toast.error(message);
     }
   };
 
@@ -103,12 +104,17 @@ export default function Pokedex() {
         fetchPokemonData({ limit: 151, offset: 0 }),
         {
           loading: "Fetching Pokémon data...",
-          success: "Pokémon data updated successfully!",
-          error: "Failed to fetch Pokémon data",
+          success: (data) => {
+            const count = (data as any)?.cached ?? 0;
+            return `Pokémon data updated successfully! Cached ${count} entries.`;
+          },
+          error: (err) => (err instanceof Error ? err.message : "Failed to fetch Pokémon data"),
         }
       );
     } catch (error) {
       console.error("Error refreshing data:", error);
+      const message = error instanceof Error ? error.message : "Unexpected error while refreshing data";
+      toast.error(message);
     }
   };
 
