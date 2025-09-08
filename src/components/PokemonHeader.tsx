@@ -1,9 +1,11 @@
 import { motion } from "framer-motion";
-import { Moon, Sun, Heart, Database } from "lucide-react";
+import { Moon, Sun, Heart, Database, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "react-router";
 import { Loader2 } from "lucide-react";
+import { useState } from "react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 interface PokemonHeaderProps {
   isDark: boolean;
@@ -24,6 +26,7 @@ export function PokemonHeader({
 }: PokemonHeaderProps) {
   const { isAuthenticated, user, signOut } = useAuth();
   const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <motion.header
@@ -48,8 +51,8 @@ export function PokemonHeader({
             </div>
           </motion.div>
 
-          {/* Actions */}
-          <div className="flex items-center gap-1.5 md:gap-2">
+          {/* Actions - Desktop */}
+          <div className="hidden sm:flex items-center gap-1.5 md:gap-2">
             {/* Data Refresh */}
             <Button
               variant="ghost"
@@ -128,6 +131,107 @@ export function PokemonHeader({
                 Sign In
               </Button>
             )}
+          </div>
+
+          {/* Mobile Menu */}
+          <div className="sm:hidden">
+            <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="sm" className="px-3" aria-label="Open menu">
+                  <Menu className="h-4 w-4" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-72">
+                <SheetHeader>
+                  <SheetTitle>Menu</SheetTitle>
+                </SheetHeader>
+                <div className="mt-4 space-y-2">
+                  {/* Data Refresh */}
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start gap-2"
+                    onClick={() => {
+                      onDataRefresh();
+                      setMenuOpen(false);
+                    }}
+                    disabled={isRefreshing}
+                    aria-label="Refresh Data"
+                  >
+                    {isRefreshing ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Refreshing...
+                      </>
+                    ) : (
+                      <>
+                        <Database className="h-4 w-4" />
+                        Refresh Data
+                      </>
+                    )}
+                  </Button>
+
+                  {/* Favorites Toggle (only when authed) */}
+                  {isAuthenticated && (
+                    <Button
+                      variant={showFavorites ? "default" : "ghost"}
+                      className="w-full justify-start gap-2"
+                      onClick={() => {
+                        onFavoritesToggle();
+                        setMenuOpen(false);
+                      }}
+                      aria-label={showFavorites ? "Show all Pokémon" : "Show favorites"}
+                    >
+                      <Heart className="h-4 w-4" />
+                      {showFavorites ? "All Pokémon" : "Favorites"}
+                    </Button>
+                  )}
+
+                  {/* Theme Toggle */}
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start gap-2"
+                    onClick={() => {
+                      onThemeToggle();
+                      setMenuOpen(false);
+                    }}
+                    aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+                  >
+                    {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                    {isDark ? "Light Mode" : "Dark Mode"}
+                  </Button>
+
+                  {/* Auth */}
+                  {isAuthenticated ? (
+                    <>
+                      <div className="px-2 text-sm text-muted-foreground">
+                        {user?.name || user?.email || "Trainer"}
+                      </div>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-center"
+                        onClick={() => {
+                          signOut();
+                          setMenuOpen(false);
+                        }}
+                      >
+                        Sign Out
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      className="w-full justify-center"
+                      onClick={() => {
+                        navigate("/auth");
+                        setMenuOpen(false);
+                      }}
+                    >
+                      Sign In
+                    </Button>
+                  )}
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </div>
