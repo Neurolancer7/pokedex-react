@@ -3,6 +3,7 @@ import { PokemonCard } from "./PokemonCard";
 import { PokemonDetailModal } from "./PokemonDetailModal";
 import type { Pokemon } from "@/lib/pokemon-api";
 import { useState } from "react";
+import { toast } from "sonner";
 
 interface PokemonGridProps {
   pokemon: Pokemon[];
@@ -24,6 +25,22 @@ export function PokemonGrid({
   onPageChange
 }: PokemonGridProps) {
   const [selectedPokemon, setSelectedPokemon] = useState<Pokemon | null>(null);
+
+  // Add a safe page change utility with clamping + error handling
+  const safeChange = (targetPage: number) => {
+    if (typeof currentPage !== "number" || typeof totalPages !== "number" || typeof onPageChange !== "function") {
+      return;
+    }
+    const safeTotal = Math.max(1, totalPages);
+    const next = Math.min(safeTotal, Math.max(1, Math.floor(targetPage)));
+    if (next === currentPage) return;
+    try {
+      onPageChange(next);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Failed to change page";
+      toast.error(msg);
+    }
+  };
 
   // Helper to compute page numbers with ellipsis
   const getPageNumbers = (current: number, total: number): Array<number | "ellipsis"> => {
@@ -119,8 +136,9 @@ export function PokemonGrid({
                     ? "opacity-50 pointer-events-none"
                     : "hover:bg-accent/60"}
                 `}
-                onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+                onClick={() => safeChange(currentPage - 1)}
                 aria-label="Previous page"
+                aria-disabled={currentPage === 1}
               >
                 ‹
               </button>
@@ -136,7 +154,7 @@ export function PokemonGrid({
                 ) : (
                   <button
                     key={p}
-                    onClick={() => onPageChange(p as number)}
+                    onClick={() => safeChange(p as number)}
                     className={`h-9 min-w-9 px-3 inline-flex items-center justify-center rounded-full text-sm transition-colors
                       ${p === currentPage
                         ? "bg-primary text-primary-foreground"
@@ -156,8 +174,9 @@ export function PokemonGrid({
                     ? "opacity-50 pointer-events-none"
                     : "hover:bg-accent/60"}
                 `}
-                onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+                onClick={() => safeChange(currentPage + 1)}
                 aria-label="Next page"
+                aria-disabled={currentPage === totalPages}
               >
                 ›
               </button>
