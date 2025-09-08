@@ -16,6 +16,9 @@ import type {
 import type * as auth_emailOtp from "../auth/emailOtp.js";
 import type * as auth from "../auth.js";
 import type * as http from "../http.js";
+import type * as pokemon from "../pokemon.js";
+import type * as pokemonData from "../pokemonData.js";
+import type * as pokemonInternal from "../pokemonInternal.js";
 import type * as users from "../users.js";
 
 /**
@@ -30,6 +33,9 @@ declare const fullApi: ApiFromModules<{
   "auth/emailOtp": typeof auth_emailOtp;
   auth: typeof auth;
   http: typeof http;
+  pokemon: typeof pokemon;
+  pokemonData: typeof pokemonData;
+  pokemonInternal: typeof pokemonInternal;
   users: typeof users;
 }>;
 export declare const api: FilterApi<

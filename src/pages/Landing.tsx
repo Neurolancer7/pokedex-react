@@ -1,43 +1,333 @@
-// TODO: REPLACE THIS LANDING PAGE WITH AN ELEGANT, THEMATIC, AND WELL-DESIGNED LANDING PAGE RELEVANT TO THE PROJECT
 import { motion } from "framer-motion";
-import { Loader } from "lucide-react";
+import { ArrowRight, Search, Heart, Zap, Shield, Star } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/hooks/use-auth";
+import { useNavigate } from "react-router";
 
 export default function Landing() {
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-      className="min-h-screen flex flex-col"
-    >
+  const { isAuthenticated, isLoading } = useAuth();
+  const navigate = useNavigate();
 
-      
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col items-center justify-center">
-        <div className="max-w-5xl mx-auto relative px-4">
-        {/* TODO: landing page goes here; replace with the landing page */}
-        <div className="flex justify-center">
-          <img
-            src="./logo.svg"
-            alt="Lock Icon"
-            width={64}
-            height={64}
-            className="rounded-lg mb-8 mt-24"
-          />
-        </div>
-        <div className="flex items-center justify-center">
-          <Loader className="h-8 w-8 animate-spin mr-4" />
-          <a
-            href="https://vly.ai"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary underline hover:text-primary/80 transition-colors"
-          >
-            vly.ai
-          </a>&nbsp; is generating your project...
-        </div>
-        </div>
+  const features = [
+    {
+      icon: Search,
+      title: "Advanced Search",
+      description: "Find Pokémon by name, type, generation, or stats with powerful filtering options.",
+    },
+    {
+      icon: Heart,
+      title: "Personal Favorites",
+      description: "Save your favorite Pokémon and build your dream team collection.",
+    },
+    {
+      icon: Zap,
+      title: "Detailed Stats",
+      description: "View comprehensive stats, abilities, moves, and evolution chains.",
+    },
+    {
+      icon: Shield,
+      title: "Type Effectiveness",
+      description: "Learn about type matchups and strategic battle advantages.",
+    },
+  ];
+
+  const samplePokemon = [
+    { id: 1, name: "Bulbasaur", types: ["grass", "poison"], image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/1.png" },
+    { id: 4, name: "Charmander", types: ["fire"], image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/4.png" },
+    { id: 7, name: "Squirtle", types: ["water"], image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/7.png" },
+    { id: 25, name: "Pikachu", types: ["electric"], image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png" },
+  ];
+
+  const typeColors: Record<string, string> = {
+    grass: "#78C850",
+    poison: "#A040A0",
+    fire: "#F08030",
+    water: "#6890F0",
+    electric: "#F8D030",
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
-    </motion.div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      {/* Header */}
+      <motion.header
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="container mx-auto px-4 py-6"
+      >
+        <div className="flex items-center justify-between">
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            className="flex items-center gap-3"
+          >
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-lg">P</span>
+            </div>
+            <div>
+              <h1 className="text-xl font-bold tracking-tight">Pokédex</h1>
+              <p className="text-xs text-muted-foreground">Gotta catch 'em all!</p>
+            </div>
+          </motion.div>
+
+          <div className="flex items-center gap-4">
+            {isAuthenticated ? (
+              <Button onClick={() => navigate("/pokedex")} className="gap-2">
+                Open Pokédex
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            ) : (
+              <>
+                <Button variant="ghost" onClick={() => navigate("/auth")}>
+                  Sign In
+                </Button>
+                <Button onClick={() => navigate("/pokedex")} className="gap-2">
+                  Explore
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      </motion.header>
+
+      {/* Hero Section */}
+      <section className="container mx-auto px-4 py-20">
+        <div className="text-center max-w-4xl mx-auto">
+          <motion.div
+            initial={{ y: 30, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.1 }}
+          >
+            <Badge variant="secondary" className="mb-6 px-4 py-2">
+              ✨ Powered by PokéAPI
+            </Badge>
+          </motion.div>
+
+          <motion.h1
+            initial={{ y: 30, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="text-5xl md:text-7xl font-bold tracking-tight mb-6 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent"
+          >
+            The Ultimate
+            <br />
+            Pokédex Experience
+          </motion.h1>
+
+          <motion.p
+            initial={{ y: 30, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed"
+          >
+            Discover, explore, and learn about all your favorite Pokémon with our comprehensive, 
+            modern Pokédex featuring detailed stats, beautiful artwork, and powerful search capabilities.
+          </motion.p>
+
+          <motion.div
+            initial={{ y: 30, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.4 }}
+            className="flex flex-col sm:flex-row gap-4 justify-center mb-16"
+          >
+            <Button
+              size="lg"
+              onClick={() => navigate("/pokedex")}
+              className="gap-2 px-8 py-6 text-lg"
+            >
+              Start Exploring
+              <ArrowRight className="h-5 w-5" />
+            </Button>
+            {!isAuthenticated && (
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => navigate("/auth")}
+                className="px-8 py-6 text-lg"
+              >
+                Sign Up Free
+              </Button>
+            )}
+          </motion.div>
+
+          {/* Sample Pokemon Cards */}
+          <motion.div
+            initial={{ y: 50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.5 }}
+            className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto"
+          >
+            {samplePokemon.map((pokemon, index) => (
+              <motion.div
+                key={pokemon.id}
+                initial={{ y: 30, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.6 + index * 0.1 }}
+                whileHover={{ y: -8, scale: 1.05 }}
+                className="cursor-pointer"
+              >
+                <Card className="overflow-hidden border-2 hover:border-primary/50 transition-all duration-300">
+                  <CardContent className="p-4">
+                    <div className="text-center">
+                      <div className="w-16 h-16 mx-auto mb-3 bg-gradient-to-br from-muted/50 to-muted rounded-full flex items-center justify-center">
+                        <img
+                          src={pokemon.image}
+                          alt={pokemon.name}
+                          className="w-12 h-12 object-contain"
+                        />
+                      </div>
+                      <h3 className="font-semibold mb-2">{pokemon.name}</h3>
+                      <div className="flex gap-1 justify-center">
+                        {pokemon.types.map((type) => (
+                          <Badge
+                            key={type}
+                            variant="secondary"
+                            className="text-xs"
+                            style={{
+                              backgroundColor: typeColors[type] + "20",
+                              color: typeColors[type],
+                            }}
+                          >
+                            {type}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="container mx-auto px-4 py-20">
+        <motion.div
+          initial={{ y: 30, opacity: 0 }}
+          whileInView={{ y: 0, opacity: 1 }}
+          viewport={{ once: true }}
+          className="text-center mb-16"
+        >
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
+            Everything You Need to Know
+          </h2>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            Our Pokédex provides comprehensive information about every Pokémon, 
+            from basic stats to detailed battle strategies.
+          </p>
+        </motion.div>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {features.map((feature, index) => (
+            <motion.div
+              key={feature.title}
+              initial={{ y: 30, opacity: 0 }}
+              whileInView={{ y: 0, opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: index * 0.1 }}
+              whileHover={{ y: -4 }}
+            >
+              <Card className="h-full border-2 hover:border-primary/50 transition-all duration-300">
+                <CardContent className="p-6 text-center">
+                  <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
+                    <feature.icon className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="font-semibold text-lg mb-2">{feature.title}</h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed">
+                    {feature.description}
+                  </p>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="container mx-auto px-4 py-20">
+        <motion.div
+          initial={{ y: 30, opacity: 0 }}
+          whileInView={{ y: 0, opacity: 1 }}
+          viewport={{ once: true }}
+          className="text-center bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-blue-500/10 rounded-2xl p-12"
+        >
+          <div className="flex justify-center mb-6">
+            <div className="flex -space-x-2">
+              {samplePokemon.slice(0, 3).map((pokemon) => (
+                <div
+                  key={pokemon.id}
+                  className="w-12 h-12 bg-white rounded-full border-2 border-background flex items-center justify-center"
+                >
+                  <img
+                    src={pokemon.image}
+                    alt={pokemon.name}
+                    className="w-8 h-8 object-contain"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
+            Ready to Start Your Journey?
+          </h2>
+          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+            Join thousands of trainers exploring the world of Pokémon. 
+            Create your account to save favorites and track your progress.
+          </p>
+          
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button
+              size="lg"
+              onClick={() => navigate("/pokedex")}
+              className="gap-2 px-8 py-6 text-lg"
+            >
+              <Star className="h-5 w-5" />
+              Explore Pokédex
+            </Button>
+            {!isAuthenticated && (
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => navigate("/auth")}
+                className="px-8 py-6 text-lg"
+              >
+                Create Account
+              </Button>
+            )}
+          </div>
+        </motion.div>
+      </section>
+
+      {/* Footer */}
+      <footer className="container mx-auto px-4 py-8 border-t">
+        <div className="text-center text-muted-foreground">
+          <p className="mb-2">
+            Built with ❤️ using{" "}
+            <a
+              href="https://pokeapi.co"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-primary transition-colors"
+            >
+              PokéAPI
+            </a>
+          </p>
+          <p className="text-sm">
+            Pokémon and Pokémon character names are trademarks of Nintendo.
+          </p>
+        </div>
+      </footer>
+    </div>
   );
 }
