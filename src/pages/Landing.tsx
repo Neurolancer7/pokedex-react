@@ -5,7 +5,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "react-router";
-import { useState } from "react";
 import { useQuery as useConvexQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { PokemonGrid } from "@/components/PokemonGrid";
@@ -57,8 +56,7 @@ export default function Landing() {
     offset: 0,
   });
 
-  const totalItems = pokemonData?.total ?? 0;
-  const totalPages = Math.max(1, Math.ceil(totalItems / LIMIT));
+  
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
