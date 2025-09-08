@@ -5,6 +5,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "react-router";
+import { useState } from "react";
+import { useQuery as useConvexQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { PokemonGrid } from "@/components/PokemonGrid";
 
 export default function Landing() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -55,6 +59,18 @@ export default function Landing() {
       </div>
     );
   }
+
+  const [page, setPage] = useState(1);
+  const LIMIT = 20;
+  const offset = (page - 1) * LIMIT;
+
+  const pokemonData = useConvexQuery(api.pokemon.list, {
+    limit: LIMIT,
+    offset,
+  });
+
+  const totalItems = pokemonData?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalItems / LIMIT));
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
@@ -217,6 +233,28 @@ export default function Landing() {
             ))}
           </motion.div>
         </div>
+      </section>
+
+      {/* Explore Section with paginated grid */}
+      <section className="container mx-auto px-4 py-12 md:py-16">
+        <div className="mb-6 md:mb-8 text-center">
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Explore Pokémon</h2>
+          <p className="text-muted-foreground">
+            Browse the Pokédex — {pokemonData ? pokemonData.total : "…"} entries
+          </p>
+        </div>
+
+        <PokemonGrid
+          pokemon={pokemonData?.pokemon ?? []}
+          favorites={[]} // favorites not shown on landing
+          isLoading={pokemonData === undefined}
+          currentPage={page}
+          totalPages={totalPages}
+          onPageChange={(p) => {
+            setPage(p);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+        />
       </section>
 
       {/* Features Section */}
