@@ -6,6 +6,7 @@ import { useNavigate } from "react-router";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Separator } from "@/components/ui/separator";
 
 interface PokemonHeaderProps {
   isDark: boolean;
@@ -42,11 +43,11 @@ export function PokemonHeader({
             className="flex items-center gap-3 cursor-pointer"
             onClick={() => navigate("/")}
           >
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center overflow-hidden">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center overflow-hidden">
               <img
                 src="https://harmless-tapir-303.convex.cloud/api/storage/dfdec238-dbb0-44cd-9147-50ae677b8144"
                 alt="Pokédex logo"
-                className="w-8 h-8 object-contain"
+                className="w-7 h-7 sm:w-8 sm:h-8 object-contain"
                 loading="eager"
                 decoding="async"
                 fetchPriority="high"
@@ -55,7 +56,7 @@ export function PokemonHeader({
               />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight">Pokédex</h1>
+              <h1 className="text-lg sm:text-xl font-bold tracking-tight">Pokédex</h1>
               <p className="text-xs text-muted-foreground">Gotta catch 'em all!</p>
             </div>
           </motion.div>
@@ -150,15 +151,17 @@ export function PokemonHeader({
                   <Menu className="h-4 w-4" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-72">
+              <SheetContent side="right" className="w-[90vw] max-w-sm sm:w-72 pt-2">
                 <SheetHeader>
                   <SheetTitle>Menu</SheetTitle>
                 </SheetHeader>
-                <div className="mt-4 space-y-2">
-                  {/* Data Refresh */}
+
+                <div className="mt-3 space-y-2">
+                  {/* Quick Actions */}
+                  <div className="px-1 text-xs font-medium text-muted-foreground">Quick actions</div>
                   <Button
                     variant="ghost"
-                    className="w-full justify-start gap-2"
+                    className="w-full justify-start gap-2 py-3"
                     onClick={() => {
                       onDataRefresh();
                       setMenuOpen(false);
@@ -179,11 +182,10 @@ export function PokemonHeader({
                     )}
                   </Button>
 
-                  {/* Favorites Toggle (only when authed) */}
                   {isAuthenticated && (
                     <Button
                       variant={showFavorites ? "default" : "ghost"}
-                      className="w-full justify-start gap-2"
+                      className="w-full justify-start gap-2 py-3"
                       onClick={() => {
                         onFavoritesToggle();
                         setMenuOpen(false);
@@ -195,10 +197,9 @@ export function PokemonHeader({
                     </Button>
                   )}
 
-                  {/* Theme Toggle */}
                   <Button
                     variant="ghost"
-                    className="w-full justify-start gap-2"
+                    className="w-full justify-start gap-2 py-3"
                     onClick={() => {
                       onThemeToggle();
                       setMenuOpen(false);
@@ -209,19 +210,23 @@ export function PokemonHeader({
                     {isDark ? "Light Mode" : "Dark Mode"}
                   </Button>
 
-                  {/* Auth */}
+                  <Separator className="my-2" />
+
+                  {/* Account */}
+                  <div className="px-1 text-xs font-medium text-muted-foreground">Account</div>
                   {isAuthenticated ? (
                     <>
-                      <div className="px-2 text-sm text-muted-foreground">
+                      <div className="px-2 text-sm text-muted-foreground py-1">
                         {user?.name || user?.email || "Trainer"}
                       </div>
                       <Button
                         variant="outline"
-                        className="w-full justify-center"
+                        className="w-full justify-center py-3"
                         onClick={() => {
                           signOut();
                           setMenuOpen(false);
                         }}
+                        aria-label="Sign out"
                       >
                         Sign Out
                       </Button>
@@ -229,11 +234,12 @@ export function PokemonHeader({
                   ) : (
                     <Button
                       variant="outline"
-                      className="w-full justify-center"
+                      className="w-full justify-center py-3"
                       onClick={() => {
                         navigate("/auth");
                         setMenuOpen(false);
                       }}
+                      aria-label="Sign in"
                     >
                       Sign In
                     </Button>
