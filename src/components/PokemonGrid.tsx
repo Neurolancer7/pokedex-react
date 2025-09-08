@@ -28,14 +28,33 @@ export function PokemonGrid({
 
   // Add a safe page change utility with clamping + error handling
   const safeChange = (targetPage: number) => {
-    if (typeof currentPage !== "number" || typeof totalPages !== "number" || typeof onPageChange !== "function") {
+    const invalid =
+      typeof currentPage !== "number" ||
+      !Number.isFinite(currentPage) ||
+      typeof totalPages !== "number" ||
+      !Number.isFinite(totalPages) ||
+      typeof onPageChange !== "function";
+
+    if (invalid) {
+      toast.error("Pagination is temporarily unavailable. Please try again.");
       return;
     }
-    const safeTotal = Math.max(1, totalPages);
-    const next = Math.min(safeTotal, Math.max(1, Math.floor(targetPage)));
-    if (next === currentPage) return;
+
+    const safeTotal = Math.max(1, Math.floor(totalPages));
+    const desired = Math.floor(targetPage);
+
+    if (desired < 1) {
+      toast.warning("You're already on the first page.");
+      return;
+    }
+    if (desired > safeTotal) {
+      toast.warning("You're already on the last page.");
+      return;
+    }
+    if (desired === currentPage) return;
+
     try {
-      onPageChange(next);
+      onPageChange(desired);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Failed to change page";
       toast.error(msg);
@@ -121,73 +140,101 @@ export function PokemonGrid({
       </motion.div>
 
       {/* Optional built-in pagination controls */}
-      {typeof currentPage === "number" &&
-        typeof totalPages === "number" &&
-        typeof onPageChange === "function" &&
-        totalPages > 1 && (
-          <div className="mt-8 flex justify-center px-2">
-            <nav
-              className="inline-flex items-center gap-1 bg-card/90 backdrop-blur-sm rounded-full p-1.5 shadow-md border overflow-x-auto no-scrollbar"
-              aria-label="pagination"
-            >
-              <button
-                className={`h-9 w-9 md:h-10 md:w-10 inline-flex items-center justify-center rounded-full text-sm transition-colors
-                  ${currentPage === 1
-                    ? "opacity-50 pointer-events-none"
-                    : "hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"}
-                `}
-                onClick={() => safeChange(currentPage - 1)}
-                aria-label="Previous page"
-                aria-disabled={currentPage === 1}
-                title="Previous"
-              >
-                ‹
-              </button>
+      {(() => {
+        const canPaginate =
+          typeof currentPage === "number" &&
+          Number.isFinite(currentPage) &&
+          typeof totalPages === "number" &&
+          Number.isFinite(totalPages) &&
+          typeof onPageChange === "function" &&
+          totalPages > 1;
 
-              {getPageNumbers(currentPage, totalPages).map((p, idx) =>
-                p === "ellipsis" ? (
-                  <span
-                    key={`e-${idx}`}
-                    className="h-9 min-w-9 md:h-10 md:min-w-10 px-2 inline-flex items-center justify-center rounded-full text-sm text-muted-foreground"
-                    aria-hidden="true"
-                  >
-                    …
-                  </span>
-                ) : (
+        const outOfBounds =
+          canPaginate && (currentPage! < 1 || currentPage! > totalPages!);
+
+        return (
+          canPaginate && (
+            <div className="mt-8 flex flex-col items-center gap-2 px-2">
+              {outOfBounds && (
+                <div
+                  role="status"
+                  className="text-xs md:text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded-md px-2 py-1"
+                >
+                  Page out of range. 
                   <button
-                    key={p}
-                    onClick={() => safeChange(p as number)}
-                    className={`h-9 min-w-9 md:h-10 md:min-w-10 px-3 inline-flex items-center justify-center rounded-full text-sm transition-colors
-                      ${p === currentPage
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      }`}
-                    aria-current={p === currentPage ? "page" : undefined}
-                    aria-label={`Page ${p}`}
-                    title={`Page ${p}`}
+                    className="ml-2 underline hover:opacity-80"
+                    onClick={() =>
+                      safeChange(currentPage! < 1 ? 1 : (totalPages as number))
+                    }
                   >
-                    {p}
+                    Go to {currentPage! < 1 ? "first" : "last"} page
                   </button>
-                )
+                </div>
               )}
-
-              <button
-                className={`h-9 w-9 md:h-10 md:w-10 inline-flex items-center justify-center rounded-full text-sm transition-colors
-                  ${currentPage === totalPages
-                    ? "opacity-50 pointer-events-none"
-                    : "hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"}
-                `}
-                onClick={() => safeChange(currentPage + 1)}
-                aria-label="Next page"
-                aria-disabled={currentPage === totalPages}
-                title="Next"
+              <nav
+                className="inline-flex items-center gap-1 bg-card/90 backdrop-blur-sm rounded-full p-1.5 shadow-md border overflow-x-auto no-scrollbar"
+                aria-label="pagination"
               >
-                ›
-              </button>
-            </nav>
-          </div>
-        )}
+                <button
+                  className={`h-9 w-9 md:h-10 md:w-10 inline-flex items-center justify-center rounded-full text-sm transition-colors
+                    ${currentPage === 1
+                      ? "opacity-50 pointer-events-none"
+                      : "hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"}
+                  `}
+                  onClick={() => safeChange((currentPage as number) - 1)}
+                  aria-label="Previous page"
+                  aria-disabled={currentPage === 1}
+                  title="Previous"
+                >
+                  ‹
+                </button>
 
+                {getPageNumbers(currentPage as number, totalPages as number).map((p, idx) =>
+                  p === "ellipsis" ? (
+                    <span
+                      key={`e-${idx}`}
+                      className="h-9 min-w-9 md:h-10 md:min-w-10 px-2 inline-flex items-center justify-center rounded-full text-sm text-muted-foreground"
+                      aria-hidden="true"
+                    >
+                      …
+                    </span>
+                  ) : (
+                    <button
+                      key={p}
+                      onClick={() => safeChange(p as number)}
+                      className={`h-9 min-w-9 md:h-10 md:min-w-10 px-3 inline-flex items-center justify-center rounded-full text-sm transition-colors
+                        ${p === currentPage
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        }`}
+                      aria-current={p === currentPage ? "page" : undefined}
+                      aria-label={`Page ${p}`}
+                      title={`Page ${p}`}
+                    >
+                      {p}
+                    </button>
+                  )
+                )}
+
+                <button
+                  className={`h-9 w-9 md:h-10 md:w-10 inline-flex items-center justify-center rounded-full text-sm transition-colors
+                    ${currentPage === totalPages
+                      ? "opacity-50 pointer-events-none"
+                      : "hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"}
+                  `}
+                  onClick={() => safeChange((currentPage as number) + 1)}
+                  aria-label="Next page"
+                  aria-disabled={currentPage === totalPages}
+                  title="Next"
+                >
+                  ›
+                </button>
+              </nav>
+            </div>
+          )
+        );
+      })()}
+      
       <PokemonDetailModal
         pokemon={selectedPokemon}
         isOpen={!!selectedPokemon}
