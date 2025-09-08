@@ -9,15 +9,46 @@ interface PokemonGridProps {
   favorites: number[];
   onFavoriteToggle?: (pokemonId: number) => void;
   isLoading?: boolean;
+  currentPage?: number;
+  totalPages?: number;
+  onPageChange?: (page: number) => void;
 }
 
 export function PokemonGrid({ 
   pokemon, 
   favorites, 
   onFavoriteToggle, 
-  isLoading = false 
+  isLoading = false,
+  currentPage,
+  totalPages,
+  onPageChange
 }: PokemonGridProps) {
   const [selectedPokemon, setSelectedPokemon] = useState<Pokemon | null>(null);
+
+  // Helper to compute page numbers with ellipsis
+  const getPageNumbers = (current: number, total: number): Array<number | "ellipsis"> => {
+    const pages: Array<number | "ellipsis"> = [];
+    const add = (p: number | "ellipsis") => pages.push(p);
+
+    if (total <= 1) return [1];
+
+    const start = Math.max(2, current - 1);
+    const end = Math.min(total - 1, current + 1);
+
+    add(1);
+    if (start > 2) add("ellipsis");
+    for (let p = start; p <= end; p++) add(p);
+    if (end < total - 1) add("ellipsis");
+    if (total > 1) add(total);
+
+    const seen = new Set<string>();
+    return pages.filter((p) => {
+      const key = String(p);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  };
 
   if (isLoading) {
     return (
@@ -71,6 +102,53 @@ export function PokemonGrid({
           </motion.div>
         ))}
       </motion.div>
+
+      {/* Optional built-in pagination controls */}
+      {typeof currentPage === "number" &&
+        typeof totalPages === "number" &&
+        typeof onPageChange === "function" &&
+        totalPages > 1 && (
+          <div className="mt-8 flex justify-center">
+            {/* Use shadcn/ui Pagination primitives already used elsewhere */}
+            <nav className="flex items-center gap-1" aria-label="pagination">
+              <button
+                className={`px-3 py-2 rounded-md text-sm border ${currentPage === 1 ? "opacity-50 pointer-events-none" : ""}`}
+                onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+                aria-label="Previous page"
+              >
+                ‹
+              </button>
+              {getPageNumbers(currentPage, totalPages).map((p, idx) =>
+                p === "ellipsis" ? (
+                  <span
+                    key={`e-${idx}`}
+                    className="px-3 py-2 rounded-md text-sm text-muted-foreground"
+                  >
+                    ...
+                  </span>
+                ) : (
+                  <button
+                    key={p}
+                    onClick={() => onPageChange(p as number)}
+                    className={`px-3 py-2 rounded-md text-sm border ${
+                      p === currentPage ? "bg-primary text-primary-foreground border-primary" : ""
+                    }`}
+                    aria-current={p === currentPage ? "page" : undefined}
+                  >
+                    {p}
+                  </button>
+                )
+              )}
+              <button
+                className={`px-3 py-2 rounded-md text-sm border ${currentPage === totalPages ? "opacity-50 pointer-events-none" : ""}`}
+                onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+                aria-label="Next page"
+              >
+                ›
+              </button>
+            </nav>
+          </div>
+        )}
 
       <PokemonDetailModal
         pokemon={selectedPokemon}
