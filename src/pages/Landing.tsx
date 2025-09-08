@@ -52,13 +52,7 @@ export default function Landing() {
     electric: "#F8D030",
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  // Removed early return to keep hooks order consistent across renders
 
   const [page, setPage] = useState(1);
   const LIMIT = 20;
