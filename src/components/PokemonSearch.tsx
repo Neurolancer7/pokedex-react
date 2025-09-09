@@ -98,7 +98,7 @@ export function PokemonSearch({
               <SelectItem value="all">All Generations</SelectItem>
               {POKEMON_GENERATIONS.map((gen) => (
                 <SelectItem key={gen.id} value={gen.id.toString()}>
-                  {gen.name} ({gen.range})
+                  {gen.name}
                 </SelectItem>
               ))}
             </SelectContent>
