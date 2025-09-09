@@ -16,15 +16,33 @@ export const list = query({
     const limit = args.limit || 20;
     const offset = args.offset || 0;
 
-    // Use explicit branching to avoid reassigning different query types
     let results: any[] = [];
-    if (args.generation !== undefined) {
+    const hasValidGeneration =
+      typeof args.generation === "number" &&
+      Number.isFinite(args.generation) &&
+      args.generation > 0;
+
+    if (hasValidGeneration) {
+      // First try by_generation index
       results = await ctx.db
         .query("pokemon")
         .withIndex("by_generation", (q) =>
           q.eq("generation", args.generation as number),
         )
         .collect();
+
+      // Fallback: if none found via generation index, use Pokedex ID ranges
+      if (results.length === 0) {
+        const range = GEN_RANGES[args.generation as number];
+        if (range) {
+          results = await ctx.db
+            .query("pokemon")
+            .withIndex("by_pokemon_id", (q) =>
+              q.gte("pokemonId", range.start).lte("pokemonId", range.end),
+            )
+            .collect();
+        }
+      }
     } else {
       results = await ctx.db.query("pokemon").collect();
     }
@@ -39,16 +57,17 @@ export const list = query({
     // Apply search filter
     if (args.search) {
       const searchLower = args.search.toLowerCase();
-      results = results.filter(pokemon =>
+      results = results.filter((pokemon) =>
         pokemon.name.toLowerCase().includes(searchLower) ||
-        pokemon.pokemonId.toString().includes(searchLower)
+        pokemon.pokemonId.toString().includes(searchLower),
       );
     }
 
-    // Apply type filter
+    // Apply type filter (case-insensitive)
     if (args.types && args.types.length > 0) {
-      results = results.filter(pokemon =>
-        args.types!.some(type => pokemon.types.includes(type))
+      const filterTypes = args.types.map((t) => t.toLowerCase());
+      results = results.filter((pokemon) =>
+        pokemon.types.some((t: string) => filterTypes.includes(t.toLowerCase())),
       );
     }
 
@@ -184,3 +203,16 @@ export const getFavorites = query({
     return pokemonDocs;
   },
 });
+
+// Add generation ID ranges as a fallback when generation-indexed lookup returns no rows
+const GEN_RANGES: Record<number, { start: number; end: number }> = {
+  1: { start: 1, end: 151 },
+  2: { start: 152, end: 251 },
+  3: { start: 252, end: 386 },
+  4: { start: 387, end: 493 },
+  5: { start: 494, end: 649 },
+  6: { start: 650, end: 721 },
+  7: { start: 722, end: 809 },
+  8: { start: 810, end: 905 },
+  9: { start: 906, end: 1025 },
+};

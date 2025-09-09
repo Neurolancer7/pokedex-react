@@ -104,7 +104,21 @@ export default function Pokedex() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   // Add ref to ensure auto-fetch only triggers once
   const autoFetchRef = useRef(false);
-  // Removed sentinelRef since infinite scroll is disabled; manual Load More only
+  // Track generations we've already attempted to fetch to avoid repeated calls
+  const fetchedGenRef = useRef<Set<number>>(new Set());
+
+  // Generation ID ranges used to auto-fetch when a region is selected but uncached
+  const GEN_RANGES: Record<number, { start: number; end: number }> = {
+    1: { start: 1, end: 151 },
+    2: { start: 152, end: 251 },
+    3: { start: 252, end: 386 },
+    4: { start: 387, end: 493 },
+    5: { start: 494, end: 649 },
+    6: { start: 650, end: 721 },
+    7: { start: 722, end: 809 },
+    8: { start: 810, end: 905 },
+    9: { start: 906, end: 1025 },
+  };
 
   const INITIAL_LIMIT = 1025; // Show all; removes need for pagination
 
@@ -237,6 +251,39 @@ export default function Pokedex() {
     });
   }, [pokemonData, showFavorites, fetchPokemonData]);
 
+  // Auto-fetch the selected generation if it appears uncached (no results after selecting)
+  useEffect(() => {
+    if (showFavorites) return;                // skip in favorites view
+    if (!selectedGeneration) return;          // only when a generation is chosen
+    if (isRefreshing) return;                 // avoid overlapping fetches
+    if (items.length > 0) return;             // results already present for this filter
+    if (fetchedGenRef.current.has(selectedGeneration)) return; // already tried this gen
+
+    const range = GEN_RANGES[selectedGeneration];
+    if (!range) return;
+
+    fetchedGenRef.current.add(selectedGeneration);
+    setIsRefreshing(true);
+
+    const promise = fetchPokemonData({
+      limit: range.end - range.start + 1,
+      offset: range.start - 1,
+    });
+
+    toast.promise(promise, {
+      loading: `Fetching Generation ${selectedGeneration} Pokémon...`,
+      success: (data) => {
+        const count = (data as any)?.cached ?? 0;
+        return `Loaded ${count} Pokémon for Generation ${selectedGeneration}.`;
+      },
+      error: (err) => (err instanceof Error ? err.message : "Failed to load generation data"),
+    });
+
+    promise.finally(() => {
+      setIsRefreshing(false);
+    });
+  }, [selectedGeneration, items.length, showFavorites, fetchPokemonData, isRefreshing]);
+
   useEffect(() => {
     setItems([]);
     setOffset(0);
@@ -249,22 +296,22 @@ export default function Pokedex() {
     if (showFavorites) return; // favorites view doesn't paginate
     if (!pokemonData || !pokemonData.pokemon) return;
 
-    setItems((prev) => {
-      const next = [...prev];
-      const seen = new Set(next.map((p) => p.pokemonId));
-      for (const p of pokemonData.pokemon) {
-        if (!seen.has(p.pokemonId)) {
-          next.push(p);
-        }
-      }
-      return next;
-    });
+    if (offset === 0) {
+      // On new filter/search, replace items with the first page
+      setItems(pokemonData.pokemon);
+    } else {
+      // Subsequent pages: append without duplicates
+      setItems((prev) => {
+        const seen = new Set(prev.map((p) => p.pokemonId));
+        const appended = pokemonData.pokemon.filter((p) => !seen.has(p.pokemonId));
+        return appended.length ? [...prev, ...appended] : prev;
+      });
+    }
 
     const total = pokemonData.total ?? 0;
-    const currentCount = (items.length || 0) + (pokemonData.pokemon?.length || 0);
-    setHasMore(currentCount < total);
+    setHasMore(offset + BATCH_LIMIT < total);
     setIsLoadingMore(false);
-  }, [pokemonData]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [pokemonData, offset, showFavorites]);
 
   // Removed IntersectionObserver to disable auto-loading; now only manual "Load More"
 
