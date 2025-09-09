@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Moon, Sun, Heart, Database, Menu } from "lucide-react";
+import { Heart, Database, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "react-router";
@@ -7,9 +7,6 @@ import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
-import { NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuList } from "@/components/ui/navigation-menu";
-import { Badge } from "@/components/ui/badge";
-import { POKEMON_GENERATIONS } from "@/lib/pokemon-api";
 
 interface PokemonHeaderProps {
   isDark: boolean;
@@ -64,33 +61,8 @@ export function PokemonHeader({
             </div>
           </motion.div>
 
-          {/* Actions - Desktop */}
+          {/* Actions - Desktop: simplified to just controls */}
           <div className="hidden sm:flex items-center gap-1.5 md:gap-2">
-            {/* Simple region nav on desktop */}
-            <NavigationMenu>
-              <NavigationMenuList>
-                <NavigationMenuItem>
-                  <NavigationMenuLink
-                    className="px-2 py-1 text-sm text-muted-foreground hover:text-foreground"
-                    onClick={() => navigate("/pokedex")}
-                  >
-                    All Pokémon
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-                {POKEMON_GENERATIONS.map((g) => (
-                  <NavigationMenuItem key={g.id}>
-                    <NavigationMenuLink
-                      className="px-2 py-1 text-sm text-muted-foreground hover:text-foreground"
-                      onClick={() => navigate(`/region/${g.id}`)}
-                    >
-                      {g.name}
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
-                ))}
-              </NavigationMenuList>
-            </NavigationMenu>
-
-            {/* Data Refresh */}
             <Button
               variant="ghost"
               size="sm"
@@ -112,7 +84,6 @@ export function PokemonHeader({
               )}
             </Button>
 
-            {/* Favorites Toggle */}
             {isAuthenticated && (
               <Button
                 variant={showFavorites ? "default" : "ghost"}
@@ -128,27 +99,11 @@ export function PokemonHeader({
               </Button>
             )}
 
-            {/* Theme Toggle */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onThemeToggle}
-              className="px-2 sm:px-3"
-              aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-            >
-              {isDark ? (
-                <Sun className="h-4 w-4" />
-              ) : (
-                <Moon className="h-4 w-4" />
-              )}
-            </Button>
-
-            {/* Auth */}
             {isAuthenticated ? (
               <div className="flex items-center gap-1.5 md:gap-2">
-                <span className="text-sm text-muted-foreground hidden sm:inline">
+                <Button variant="ghost" size="sm" className="px-2 sm:px-3" disabled>
                   {user?.name || user?.email || "Trainer"}
-                </span>
+                </Button>
                 <Button
                   variant="outline"
                   size="sm"
@@ -223,47 +178,6 @@ export function PokemonHeader({
                       {showFavorites ? "All Pokémon" : "Favorites"}
                     </Button>
                   )}
-
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start gap-2 py-3"
-                    onClick={() => {
-                      onThemeToggle();
-                      setMenuOpen(false);
-                    }}
-                    aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-                  >
-                    {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-                    {isDark ? "Light Mode" : "Dark Mode"}
-                  </Button>
-
-                  {/* Regions */}
-                  <div className="px-1 text-xs font-medium text-muted-foreground">Regions</div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button
-                      variant="ghost"
-                      className="justify-start"
-                      onClick={() => {
-                        navigate("/pokedex");
-                        setMenuOpen(false);
-                      }}
-                    >
-                      All Pokémon
-                    </Button>
-                    {POKEMON_GENERATIONS.map((g) => (
-                      <Button
-                        key={g.id}
-                        variant="ghost"
-                        className="justify-start"
-                        onClick={() => {
-                          navigate(`/region/${g.id}`);
-                          setMenuOpen(false);
-                        }}
-                      >
-                        {g.name}
-                      </Button>
-                    ))}
-                  </div>
 
                   <Separator className="my-2" />
 
