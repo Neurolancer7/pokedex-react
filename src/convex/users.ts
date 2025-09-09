@@ -2,6 +2,7 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 import { query, QueryCtx } from "./_generated/server";
 import { mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { internalMutation } from "./_generated/server";
 
 /**
  * Get the current signed in user. Returns null if the user is not signed in.
@@ -43,7 +44,6 @@ export const updateProfile = mutation({
     image: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const { getAuthUserId } = await import("@convex-dev/auth/server");
     const userId = await getAuthUserId(ctx);
     if (!userId) {
       throw new Error("Not authenticated");
@@ -57,6 +57,27 @@ export const updateProfile = mutation({
     }
 
     await ctx.db.patch(userId, updates);
+    return null;
+  },
+});
+
+// Add internal mutation used by the Node action for updating profile
+export const updateProfileInternal = internalMutation({
+  args: {
+    userId: v.id("users"),
+    name: v.optional(v.string()),
+    image: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const updates: Record<string, unknown> = {};
+    if (args.name !== undefined) updates.name = args.name;
+    if (args.image !== undefined) updates.image = args.image;
+
+    if (Object.keys(updates).length === 0) {
+      return null;
+    }
+
+    await ctx.db.patch(args.userId, updates);
     return null;
   },
 });

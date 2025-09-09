@@ -130,7 +130,7 @@ export default function Pokedex() {
 
   const favorites = useConvexQuery(
     api.pokemon.getFavorites,
-    isAuthenticated ? {} : "skip"
+    isAuthenticated ? {} : undefined
   );
 
   const addToFavorites = useConvexMutation(api.pokemon.addToFavorites);

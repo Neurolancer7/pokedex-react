@@ -20,6 +20,7 @@ import type * as pokemon from "../pokemon.js";
 import type * as pokemonData from "../pokemonData.js";
 import type * as pokemonInternal from "../pokemonInternal.js";
 import type * as users from "../users.js";
+import type * as usersActions from "../usersActions.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -37,6 +38,7 @@ declare const fullApi: ApiFromModules<{
   pokemonData: typeof pokemonData;
   pokemonInternal: typeof pokemonInternal;
   users: typeof users;
+  usersActions: typeof usersActions;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,

@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useQuery as useConvexQuery, useMutation as useConvexMutation } from "convex/react";
+import { useQuery as useConvexQuery, useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { toast } from "sonner";
 
@@ -39,9 +39,9 @@ export function PokemonHeader({
   const [selectedImage, setSelectedImage] = useState<string>(user?.image || DEFAULT_AVATAR);
 
   // Load favorites for avatar selection
-  const favorites = useConvexQuery(api.pokemon.getFavorites, isAuthenticated ? {} : "skip");
+  const favorites = useConvexQuery(api.pokemon.getFavorites, isAuthenticated ? {} : undefined);
   // Mutation to update profile
-  const updateProfile = useConvexMutation(api.users.updateProfile);
+  const updateProfile = useAction(api.usersActions.updateProfile);
 
   // Keep local state in sync with user changes
   useEffect(() => {
