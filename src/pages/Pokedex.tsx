@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, AlertCircle, RefreshCw } from "lucide-react";
@@ -22,6 +22,63 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+
+class ErrorBoundary extends React.Component<{ onRetry: () => void; children: React.ReactNode }, { hasError: boolean; errorMessage?: string }> {
+  constructor(props: { onRetry: () => void; children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, errorMessage: undefined };
+  }
+
+  static getDerivedStateFromError(error: unknown) {
+    return { hasError: true, errorMessage: error instanceof Error ? error.message : "An unexpected error occurred." };
+  }
+
+  componentDidCatch(error: unknown, errorInfo: unknown) {
+    console.error("ErrorBoundary caught:", error, errorInfo);
+  }
+
+  reset = () => this.setState({ hasError: false, errorMessage: undefined });
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-md mx-auto">
+            <div className="border rounded-md p-4 bg-card">
+              <div className="text-sm font-medium mb-1">Something went wrong while loading Pokémon.</div>
+              <div className="text-sm text-muted-foreground mb-4">
+                {this.state.errorMessage || "Please try again."}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  className="px-4 h-9 rounded-md bg-primary text-primary-foreground hover:opacity-90"
+                  onClick={() => {
+                    try {
+                      this.props.onRetry();
+                    } finally {
+                      this.reset();
+                    }
+                  }}
+                  aria-label="Retry loading data"
+                >
+                  Retry
+                </button>
+                <button
+                  className="px-4 h-9 rounded-md border hover:bg-accent/60"
+                  onClick={this.reset}
+                  aria-label="Dismiss error"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 export default function Pokedex() {
   const { isAuthenticated } = useAuth();
@@ -246,151 +303,153 @@ export default function Pokedex() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <PokemonHeader
-        isDark={isDark}
-        onThemeToggle={handleThemeToggle}
-        showFavorites={showFavorites}
-        onFavoritesToggle={() => setShowFavorites(!showFavorites)}
-      />
+    <ErrorBoundary onRetry={handleDataRefresh}>
+      <div className="min-h-screen bg-background">
+        <PokemonHeader
+          isDark={isDark}
+          onThemeToggle={handleThemeToggle}
+          showFavorites={showFavorites}
+          onFavoritesToggle={() => setShowFavorites(!showFavorites)}
+        />
 
-      <main className="container mx-auto px-4 py-8">
-        {!showFavorites && (
+        <main className="container mx-auto px-4 py-8">
+          {!showFavorites && (
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.1 }}
+              className="mb-8"
+            >
+              <PokemonSearch
+                onSearch={handleSearch}
+                onFilterChange={handleFilterChange}
+                searchQuery={searchQuery}
+                selectedTypes={selectedTypes}
+                selectedGeneration={selectedGeneration}
+              />
+            </motion.div>
+          )}
+
           <motion.div
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.1 }}
-            className="mb-8"
+            transition={{ delay: 0.2 }}
+            className="mb-6"
           >
-            <PokemonSearch
-              onSearch={handleSearch}
-              onFilterChange={handleFilterChange}
-              searchQuery={searchQuery}
-              selectedTypes={selectedTypes}
-              selectedGeneration={selectedGeneration}
-            />
-          </motion.div>
-        )}
-
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="mb-6"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold tracking-tight">
-                {showFavorites ? "Your Favorites" : "Pokémon"}
-              </h2>
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold tracking-tight">
+                  {showFavorites ? "Your Favorites" : "Pokémon"}
+                </h2>
+              </div>
             </div>
-          </div>
-        </motion.div>
-
-        {!isInitialLoading && displayPokemon.length === 0 && !pokemonData?.total && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center py-12"
-          >
-            <Alert className="max-w-md mx-auto flex flex-col items-center gap-3 text-left">
-              <div className="w-full flex items-center gap-2">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription className="flex-1">
-                  No Pokémon data found. You can try fetching the data again.
-                </AlertDescription>
-              </div>
-              <div className="w-full flex items-center justify-center gap-2">
-                <Button
-                  variant="default"
-                  className="px-5"
-                  onClick={handleDataRefresh}
-                  disabled={isRefreshing}
-                  aria-busy={isRefreshing}
-                  aria-label="Fetch Pokémon Data"
-                >
-                  {isRefreshing ? (
-                    <span className="inline-flex items-center gap-2">
-                      <span className="h-5 w-5 rounded-full bg-white/10 backdrop-blur ring-2 ring-white/40 shadow-md shadow-primary/30 flex items-center justify-center">
-                        <img
-                          src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png"
-                          alt="Loading Pokéball"
-                          className="h-4 w-4 animate-bounce-spin"
-                        />
-                      </span>
-                      Fetching…
-                    </span>
-                  ) : (
-                    "Fetch Pokémon Data"
-                  )}
-                </Button>
-              </div>
-            </Alert>
           </motion.div>
-        )}
 
-        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }}>
-          <PokemonGrid
-            key={`${showFavorites ? "fav" : "infinite"}-${selectedGeneration ?? "all"}-${selectedTypes.join(",")}-${searchQuery}`}
-            pokemon={displayPokemon}
-            favorites={favoriteIds}
-            onFavoriteToggle={handleFavoriteToggle}
-            isLoading={isInitialLoading}
-          />
-        </motion.div>
-
-        {/* Load-more controls and sentinel */}
-        {!showFavorites && (
-          <div className="mt-8 flex flex-col items-center gap-3">
-            {!hasMore && items.length > 0 && (
-              <div className="text-muted-foreground text-sm">No more Pokémon</div>
-            )}
-
-            {hasMore && (
-              <>
-                {/* Show animated Pokéball loader while loading, else the Load More button */}
-                {isLoadingMore ? (
-                  <div
-                    className="w-full sm:w-auto flex items-center justify-center"
-                    aria-busy="true"
-                    aria-live="polite"
-                  >
-                    <div className="w-full sm:w-auto px-6 h-11 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg border border-white/10 flex items-center justify-center">
-                      <div className="h-9 w-9 rounded-full bg-white/10 backdrop-blur ring-2 ring-white/40 shadow-md shadow-primary/30 flex items-center justify-center animate-pulse">
-                        <img
-                          src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png"
-                          alt="Loading Pokéball"
-                          className="h-7 w-7 animate-bounce-spin drop-shadow"
-                        />
-                      </div>
-                      <span className="sr-only">Loading more Pokémon…</span>
-                    </div>
-                  </div>
-                ) : (
+          {!isInitialLoading && displayPokemon.length === 0 && !pokemonData?.total && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center py-12"
+            >
+              <Alert className="max-w-md mx-auto flex flex-col items-center gap-3 text-left">
+                <div className="w-full flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription className="flex-1">
+                    No Pokémon data found. You can try fetching the data again.
+                  </AlertDescription>
+                </div>
+                <div className="w-full flex items-center justify-center gap-2">
                   <Button
                     variant="default"
-                    className="w-full sm:w-auto px-6 h-11 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md hover:from-blue-500 hover:to-purple-500 active:scale-[0.99] transition-all disabled:opacity-70 disabled:cursor-not-allowed"
-                    onClick={() => {
-                      // Keep page static during load; only extend after data arrives
-                      if (isLoadingMore) return;
-                      setIsLoadingMore(true);
-                      setOffset((o) => o + BATCH_LIMIT);
-                    }}
-                    disabled={isLoadingMore}
-                    aria-busy={isLoadingMore}
-                    aria-live="polite"
-                    aria-label="Load more Pokémon"
+                    className="px-5"
+                    onClick={handleDataRefresh}
+                    disabled={isRefreshing}
+                    aria-busy={isRefreshing}
+                    aria-label="Fetch Pokémon Data"
                   >
-                    Load More
+                    {isRefreshing ? (
+                      <span className="inline-flex items-center gap-2">
+                        <span className="h-5 w-5 rounded-full bg-white/10 backdrop-blur ring-2 ring-white/40 shadow-md shadow-primary/30 flex items-center justify-center">
+                          <img
+                            src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png"
+                            alt="Loading Pokéball"
+                            className="h-4 w-4 animate-bounce-spin"
+                          />
+                        </span>
+                        Fetching…
+                      </span>
+                    ) : (
+                      "Fetch Pokémon Data"
+                    )}
                   </Button>
-                )}
-              </>
-            )}
+                </div>
+              </Alert>
+            </motion.div>
+          )}
 
-            {/* Removed sentinel; manual loading only */}
-          </div>
-        )}
-      </main>
-    </div>
+          <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }}>
+            <PokemonGrid
+              key={`${showFavorites ? "fav" : "infinite"}-${selectedGeneration ?? "all"}-${selectedTypes.join(",")}-${searchQuery}`}
+              pokemon={displayPokemon}
+              favorites={favoriteIds}
+              onFavoriteToggle={handleFavoriteToggle}
+              isLoading={isInitialLoading}
+            />
+          </motion.div>
+
+          {/* Load-more controls and sentinel */}
+          {!showFavorites && (
+            <div className="mt-8 flex flex-col items-center gap-3">
+              {!hasMore && items.length > 0 && (
+                <div className="text-muted-foreground text-sm">No more Pokémon</div>
+              )}
+
+              {hasMore && (
+                <>
+                  {/* Show animated Pokéball loader while loading, else the Load More button */}
+                  {isLoadingMore ? (
+                    <div
+                      className="w-full sm:w-auto flex items-center justify-center"
+                      aria-busy="true"
+                      aria-live="polite"
+                    >
+                      <div className="w-full sm:w-auto px-6 h-11 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg border border-white/10 flex items-center justify-center">
+                        <div className="h-9 w-9 rounded-full bg-white/10 backdrop-blur ring-2 ring-white/40 shadow-md shadow-primary/30 flex items-center justify-center animate-pulse">
+                          <img
+                            src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png"
+                            alt="Loading Pokéball"
+                            className="h-7 w-7 animate-bounce-spin drop-shadow"
+                          />
+                        </div>
+                        <span className="sr-only">Loading more Pokémon…</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <Button
+                      variant="default"
+                      className="w-full sm:w-auto px-6 h-11 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md hover:from-blue-500 hover:to-purple-500 active:scale-[0.99] transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                      onClick={() => {
+                        // Keep page static during load; only extend after data arrives
+                        if (isLoadingMore) return;
+                        setIsLoadingMore(true);
+                        setOffset((o) => o + BATCH_LIMIT);
+                      }}
+                      disabled={isLoadingMore}
+                      aria-busy={isLoadingMore}
+                      aria-live="polite"
+                      aria-label="Load more Pokémon"
+                    >
+                      Load More
+                    </Button>
+                  )}
+                </>
+              )}
+
+              {/* Removed sentinel; manual loading only */}
+            </div>
+          )}
+        </main>
+      </div>
+    </ErrorBoundary>
   );
 }
