@@ -40,10 +40,10 @@ export default function Pokedex() {
   const [page, setPage] = useState(1);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const INITIAL_LIMIT = 20;
+  const INITIAL_LIMIT = 1025; // Show all; removes need for pagination
 
   const computedLimit = INITIAL_LIMIT;
-  const computedOffset = (page - 1) * INITIAL_LIMIT;
+  const computedOffset = 0; // Always start at 0 since we load all
 
   const pokemonData = useConvexQuery(api.pokemon.list, {
     limit: computedLimit,
@@ -136,10 +136,6 @@ export default function Pokedex() {
       setIsRefreshing(false);
     }
   };
-
-  
-
-  
 
   useEffect(() => {
     if (!showFavorites) {
@@ -257,16 +253,6 @@ export default function Pokedex() {
             favorites={favoriteIds}
             onFavoriteToggle={handleFavoriteToggle}
             isLoading={isLoading}
-            currentPage={!showFavorites ? page : undefined}
-            totalPages={!showFavorites ? totalPages : undefined}
-            onPageChange={
-              !showFavorites
-                ? (p) => {
-                    setPage(p);
-                    window.scrollTo({ top: 0, behavior: "smooth" });
-                  }
-                : undefined
-            }
           />
         </motion.div>
 
