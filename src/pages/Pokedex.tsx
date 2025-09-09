@@ -264,11 +264,38 @@ export default function Pokedex() {
             animate={{ opacity: 1, y: 0 }}
             className="text-center py-12"
           >
-            <Alert className="max-w-md mx-auto">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                No Pokémon data found.
-              </AlertDescription>
+            <Alert className="max-w-md mx-auto flex flex-col items-center gap-3 text-left">
+              <div className="w-full flex items-center gap-2">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="flex-1">
+                  No Pokémon data found. You can try fetching the data again.
+                </AlertDescription>
+              </div>
+              <div className="w-full flex items-center justify-center gap-2">
+                <Button
+                  variant="default"
+                  className="px-5"
+                  onClick={handleDataRefresh}
+                  disabled={isRefreshing}
+                  aria-busy={isRefreshing}
+                  aria-label="Fetch Pokémon Data"
+                >
+                  {isRefreshing ? (
+                    <span className="inline-flex items-center gap-2">
+                      <span className="h-5 w-5 rounded-full bg-white/10 backdrop-blur ring-2 ring-white/40 shadow-md shadow-primary/30 flex items-center justify-center">
+                        <img
+                          src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png"
+                          alt="Loading Pokéball"
+                          className="h-4 w-4 animate-bounce-spin"
+                        />
+                      </span>
+                      Fetching…
+                    </span>
+                  ) : (
+                    "Fetch Pokémon Data"
+                  )}
+                </Button>
+              </div>
             </Alert>
           </motion.div>
         )}
