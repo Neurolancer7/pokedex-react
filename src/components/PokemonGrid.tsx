@@ -27,6 +27,7 @@ export function PokemonGrid({
 }: PokemonGridProps) {
   const [selectedPokemon, setSelectedPokemon] = useState<Pokemon | null>(null);
   const [liveMsg, setLiveMsg] = useState<string>("");
+  const jumpInputRef = useRef<HTMLInputElement>(null);
 
   // Track if we've already attempted an auto-fix to avoid loops
   const autoFixedRef = useRef(false);
@@ -64,6 +65,28 @@ export function PokemonGrid({
       const msg = e instanceof Error ? e.message : "Failed to change page";
       toast.error(msg);
     }
+  };
+
+  // Handle jump form submit
+  const handleJumpSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const invalid =
+      typeof currentPage !== "number" ||
+      !Number.isFinite(currentPage) ||
+      typeof totalPages !== "number" ||
+      !Number.isFinite(totalPages);
+
+    if (invalid) {
+      toast.error("Pagination is temporarily unavailable.");
+      return;
+    }
+
+    const raw = Number(jumpInputRef.current?.value);
+    if (!Number.isFinite(raw)) {
+      toast.error("Enter a valid page number.");
+      return;
+    }
+    safeChange(raw);
   };
 
   // Auto-correct clearly invalid pagination states and announce them
@@ -222,9 +245,39 @@ export function PokemonGrid({
                   </button>
                 </div>
               )}
+
+              {/* Page indicator + jump to page */}
+              <div className="flex flex-wrap items-center justify-center gap-2 text-xs md:text-sm text-muted-foreground">
+                <span>
+                  Page <span className="font-medium text-foreground">{currentPage}</span> of{" "}
+                  <span className="font-medium text-foreground">{totalPages}</span>
+                </span>
+                <form onSubmit={handleJumpSubmit} className="flex items-center gap-1">
+                  <label htmlFor="jumpPage" className="sr-only">Jump to page</label>
+                  <input
+                    id="jumpPage"
+                    ref={jumpInputRef}
+                    type="number"
+                    min={1}
+                    max={Math.max(1, Number(totalPages))}
+                    defaultValue={currentPage}
+                    inputMode="numeric"
+                    className="h-8 w-16 rounded-md border bg-background px-2 text-center text-sm"
+                    aria-label="Jump to page"
+                  />
+                  <button
+                    type="submit"
+                    className="h-8 rounded-md border px-2 text-xs md:text-sm hover:bg-accent/60"
+                    aria-label="Go to page"
+                  >
+                    Go
+                  </button>
+                </form>
+              </div>
+
               <nav
                 className="inline-flex items-center gap-1 bg-card/90 backdrop-blur-sm rounded-full p-1.5 shadow-md border overflow-x-auto no-scrollbar"
-                aria-label="pagination"
+                aria-label={`pagination, page ${currentPage} of ${totalPages}`}
               >
                 <button
                   className={`h-9 w-9 md:h-10 md:w-10 inline-flex items-center justify-center rounded-full text-sm transition-colors
