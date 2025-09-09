@@ -174,12 +174,14 @@ export function PokemonGrid({
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-        {Array.from({ length: 20 }).map((_, i) => (
-          <div key={i} className="animate-pulse">
-            <div className="bg-muted rounded-lg h-64"></div>
-          </div>
-        ))}
+      <div className="bg-card/60 border rounded-xl shadow-sm p-4 md:p-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
+          {Array.from({ length: 20 }).map((_, i) => (
+            <div key={i} className="animate-pulse">
+              <div className="rounded-xl h-64 bg-gradient-to-br from-muted/70 to-muted border" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -189,7 +191,7 @@ export function PokemonGrid({
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center py-12"
+        className="bg-card/60 border rounded-xl shadow-sm p-10 text-center"
       >
         <div className="text-6xl mb-4">🔍</div>
         <h3 className="text-xl font-semibold mb-2">No Pokémon found</h3>
@@ -202,160 +204,162 @@ export function PokemonGrid({
 
   return (
     <>
-      <motion.div
-        variants={containerVariants}
-        initial="visible"
-        animate="visible"
-        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"
-      >
-        {pokemon.map((poke, index) => (
-          <motion.div
-            key={poke.pokemonId}
-            variants={cardVariants}
-            initial="visible"
-            animate="visible"
-          >
-            <PokemonCard
-              pokemon={poke}
-              isFavorite={favorites.includes(poke.pokemonId)}
-              onFavoriteToggle={onFavoriteToggle}
-              onClick={setSelectedPokemon}
-            />
-          </motion.div>
-        ))}
-      </motion.div>
+      <div className="bg-card/60 border rounded-xl shadow-sm p-4 md:p-6">
+        <motion.div
+          variants={containerVariants}
+          initial="visible"
+          animate="visible"
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5"
+        >
+          {pokemon.map((poke, index) => (
+            <motion.div
+              key={poke.pokemonId}
+              variants={cardVariants}
+              initial="visible"
+              animate="visible"
+            >
+              <PokemonCard
+                pokemon={poke}
+                isFavorite={favorites.includes(poke.pokemonId)}
+                onFavoriteToggle={onFavoriteToggle}
+                onClick={setSelectedPokemon}
+              />
+            </motion.div>
+          ))}
+        </motion.div>
 
-      {/* Optional built-in pagination controls */}
-      {(() => {
-        const canPaginate =
-          typeof currentPage === "number" &&
-          Number.isFinite(currentPage) &&
-          typeof totalPages === "number" &&
-          Number.isFinite(totalPages) &&
-          typeof onPageChange === "function" &&
-          totalPages > 1;
+        {/* Optional built-in pagination controls */}
+        {(() => {
+          const canPaginate =
+            typeof currentPage === "number" &&
+            Number.isFinite(currentPage) &&
+            typeof totalPages === "number" &&
+            Number.isFinite(totalPages) &&
+            typeof onPageChange === "function" &&
+            totalPages > 1;
 
-        const outOfBounds =
-          canPaginate && (currentPage! < 1 || currentPage! > totalPages!);
+          const outOfBounds =
+            canPaginate && (currentPage! < 1 || currentPage! > totalPages!);
 
-        return (
-          canPaginate && (
-            <div className="mt-8 flex flex-col items-center gap-2 px-2">
-              {/* Accessible live region for pagination errors/auto-fixes */}
-              <div className="sr-only" aria-live="polite">
-                {liveMsg}
-              </div>
-
-              {outOfBounds && (
-                <div
-                  role="status"
-                  className="text-xs md:text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded-md px-2 py-1"
-                >
-                  Page out of range. 
-                  <button
-                    className="ml-2 underline hover:opacity-80"
-                    onClick={() =>
-                      safeChange(currentPage! < 1 ? 1 : (totalPages as number))
-                    }
-                  >
-                    Go to {currentPage! < 1 ? "first" : "last"} page
-                  </button>
+          return (
+            canPaginate && (
+              <div className="mt-8 flex flex-col items-center gap-2 px-2">
+                {/* Accessible live region for pagination errors/auto-fixes */}
+                <div className="sr-only" aria-live="polite">
+                  {liveMsg}
                 </div>
-              )}
 
-              {/* Page indicator + jump to page */}
-              <div className="flex flex-wrap items-center justify-center gap-2 text-xs md:text-sm text-muted-foreground">
-                <span>
-                  Page <span className="font-medium text-foreground">{currentPage}</span> of{" "}
-                  <span className="font-medium text-foreground">{totalPages}</span>
-                </span>
-                <form onSubmit={handleJumpSubmit} className="flex items-center gap-1">
-                  <label htmlFor="jumpPage" className="sr-only">Jump to page</label>
-                  <input
-                    id="jumpPage"
-                    ref={jumpInputRef}
-                    type="number"
-                    min={1}
-                    max={Math.max(1, Number(totalPages))}
-                    defaultValue={currentPage}
-                    inputMode="numeric"
-                    className="h-8 w-16 rounded-md border bg-background px-2 text-center text-sm"
-                    aria-label="Jump to page"
-                  />
-                  <button
-                    type="submit"
-                    className="h-8 rounded-md border px-2 text-xs md:text-sm hover:bg-accent/60"
-                    aria-label="Go to page"
+                {outOfBounds && (
+                  <div
+                    role="status"
+                    className="text-xs md:text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded-md px-2 py-1"
                   >
-                    Go
-                  </button>
-                </form>
-              </div>
-
-              <nav
-                className="inline-flex items-center gap-1 bg-card/90 backdrop-blur-sm rounded-full p-1.5 shadow-md border overflow-x-auto no-scrollbar"
-                aria-label={`pagination, page ${currentPage} of ${totalPages}`}
-              >
-                <button
-                  className={`h-9 w-9 md:h-10 md:w-10 inline-flex items-center justify-center rounded-full text-sm transition-colors
-                    ${currentPage === 1
-                      ? "opacity-50 pointer-events-none"
-                      : "hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"}
-                  `}
-                  onClick={() => safeChange((currentPage as number) - 1)}
-                  aria-label="Previous page"
-                  aria-disabled={currentPage === 1}
-                  title="Previous"
-                >
-                  ‹
-                </button>
-
-                {getPageNumbers(currentPage as number, totalPages as number).map((p, idx) =>
-                  p === "ellipsis" ? (
-                    <span
-                      key={`e-${idx}`}
-                      className="h-9 min-w-9 md:h-10 md:min-w-10 px-2 inline-flex items-center justify-center rounded-full text-sm text-muted-foreground"
-                      aria-hidden="true"
-                    >
-                      …
-                    </span>
-                  ) : (
+                    Page out of range. 
                     <button
-                      key={p}
-                      onClick={() => safeChange(p as number)}
-                      className={`h-9 min-w-9 md:h-10 md:min-w-10 px-3 inline-flex items-center justify-center rounded-full text-sm transition-colors
-                        ${p === currentPage
-                          ? "bg-primary text-primary-foreground shadow-sm"
-                          : "hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        }`}
-                      aria-current={p === currentPage ? "page" : undefined}
-                      aria-label={`Page ${p}`}
-                      title={`Page ${p}`}
+                      className="ml-2 underline hover:opacity-80"
+                      onClick={() =>
+                        safeChange(currentPage! < 1 ? 1 : (totalPages as number))
+                      }
                     >
-                      {p}
+                      Go to {currentPage! < 1 ? "first" : "last"} page
                     </button>
-                  )
+                  </div>
                 )}
 
-                <button
-                  className={`h-9 w-9 md:h-10 md:w-10 inline-flex items-center justify-center rounded-full text-sm transition-colors
-                    ${currentPage === totalPages
-                      ? "opacity-50 pointer-events-none"
-                      : "hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"}
-                  `}
-                  onClick={() => safeChange((currentPage as number) + 1)}
-                  aria-label="Next page"
-                  aria-disabled={currentPage === totalPages}
-                  title="Next"
+                {/* Page indicator + jump to page */}
+                <div className="flex flex-wrap items-center justify-center gap-2 text-xs md:text-sm text-muted-foreground">
+                  <span>
+                    Page <span className="font-medium text-foreground">{currentPage}</span> of{" "}
+                    <span className="font-medium text-foreground">{totalPages}</span>
+                  </span>
+                  <form onSubmit={handleJumpSubmit} className="flex items-center gap-1">
+                    <label htmlFor="jumpPage" className="sr-only">Jump to page</label>
+                    <input
+                      id="jumpPage"
+                      ref={jumpInputRef}
+                      type="number"
+                      min={1}
+                      max={Math.max(1, Number(totalPages))}
+                      defaultValue={currentPage}
+                      inputMode="numeric"
+                      className="h-8 w-16 rounded-md border bg-background px-2 text-center text-sm"
+                      aria-label="Jump to page"
+                    />
+                    <button
+                      type="submit"
+                      className="h-8 rounded-md border px-2 text-xs md:text-sm hover:bg-accent/60"
+                      aria-label="Go to page"
+                    >
+                      Go
+                    </button>
+                  </form>
+                </div>
+
+                <nav
+                  className="inline-flex items-center gap-1 bg-card/90 backdrop-blur-sm rounded-full p-1.5 shadow-md border overflow-x-auto no-scrollbar"
+                  aria-label={`pagination, page ${currentPage} of ${totalPages}`}
                 >
-                  ›
-                </button>
-              </nav>
-            </div>
-          )
-        );
-      })()}
-      
+                  <button
+                    className={`h-9 w-9 md:h-10 md:w-10 inline-flex items-center justify-center rounded-full text-sm transition-colors
+                      ${currentPage === 1
+                        ? "opacity-50 pointer-events-none"
+                        : "hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"}
+                    `}
+                    onClick={() => safeChange((currentPage as number) - 1)}
+                    aria-label="Previous page"
+                    aria-disabled={currentPage === 1}
+                    title="Previous"
+                  >
+                    ‹
+                  </button>
+
+                  {getPageNumbers(currentPage as number, totalPages as number).map((p, idx) =>
+                    p === "ellipsis" ? (
+                      <span
+                        key={`e-${idx}`}
+                        className="h-9 min-w-9 md:h-10 md:min-w-10 px-2 inline-flex items-center justify-center rounded-full text-sm text-muted-foreground"
+                        aria-hidden="true"
+                      >
+                        …
+                      </span>
+                    ) : (
+                      <button
+                        key={p}
+                        onClick={() => safeChange(p as number)}
+                        className={`h-9 min-w-9 md:h-10 md:min-w-10 px-3 inline-flex items-center justify-center rounded-full text-sm transition-colors
+                          ${p === currentPage
+                            ? "bg-primary text-primary-foreground shadow-sm"
+                            : "hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          }`}
+                        aria-current={p === currentPage ? "page" : undefined}
+                        aria-label={`Page ${p}`}
+                        title={`Page ${p}`}
+                      >
+                        {p}
+                      </button>
+                    )
+                  )}
+
+                  <button
+                    className={`h-9 w-9 md:h-10 md:w-10 inline-flex items-center justify-center rounded-full text-sm transition-colors
+                      ${currentPage === totalPages
+                        ? "opacity-50 pointer-events-none"
+                        : "hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"}
+                    `}
+                    onClick={() => safeChange((currentPage as number) + 1)}
+                    aria-label="Next page"
+                    aria-disabled={currentPage === totalPages}
+                    title="Next"
+                  >
+                    ›
+                  </button>
+                </nav>
+              </div>
+            )
+          );
+        })()}
+      </div>
+
       <PokemonDetailModal
         pokemon={selectedPokemon}
         isOpen={!!selectedPokemon}
