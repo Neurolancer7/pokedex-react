@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, AlertCircle, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
 import { api } from "@/convex/_generated/api";
-import { useConvexAuth, useQuery as useConvexQuery, useMutation as useConvexMutation, useAction } from "convex/react";
+import { useQuery as useConvexQuery, useMutation as useConvexMutation, useAction } from "convex/react";
 import { useAuth } from "@/hooks/use-auth";
 
 import { PokemonHeader } from "@/components/PokemonHeader";
@@ -37,8 +37,15 @@ export default function Pokedex() {
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [selectedGeneration, setSelectedGeneration] = useState<number>();
   const [showFavorites, setShowFavorites] = useState(false);
-  const [page, setPage] = useState(1);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Infinite scroll state
+  const BATCH_LIMIT = 30; // changed from 20 -> 30
+  const [offset, setOffset] = useState(0);
+  const [items, setItems] = useState<any[]>([]);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   const INITIAL_LIMIT = 1025; // Show all; removes need for pagination
 
@@ -46,8 +53,8 @@ export default function Pokedex() {
   const computedOffset = 0; // Always start at 0 since we load all
 
   const pokemonData = useConvexQuery(api.pokemon.list, {
-    limit: computedLimit,
-    offset: computedOffset,
+    limit: showFavorites ? 0 : BATCH_LIMIT,
+    offset: showFavorites ? 0 : offset,
     search: searchQuery || undefined,
     types: selectedTypes.length > 0 ? selectedTypes : undefined,
     generation: selectedGeneration,
@@ -80,13 +87,11 @@ export default function Pokedex() {
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    setPage(1);
   };
 
   const handleFilterChange = (filters: { types: string[]; generation?: number }) => {
     setSelectedTypes(filters.types);
     setSelectedGeneration(filters.generation);
-    setPage(1);
   };
 
   const handleFavoriteToggle = async (pokemonId: number) => {
@@ -138,15 +143,60 @@ export default function Pokedex() {
   };
 
   useEffect(() => {
-    if (!showFavorites) {
-      // when coming back from favorites, reset to first page
-      setPage(1);
-    }
-  }, [showFavorites]);
+    setItems([]);
+    setOffset(0);
+    setHasMore(true);
+    setIsLoadingMore(false);
+  }, [searchQuery, selectedGeneration, showFavorites, selectedTypes.join(",")]);
 
-  const displayPokemon = showFavorites ? (favorites || []) : (pokemonData?.pokemon || []);
+  // Append new page results
+  useEffect(() => {
+    if (showFavorites) return; // favorites view doesn't paginate
+    if (!pokemonData || !pokemonData.pokemon) return;
+
+    setItems((prev) => {
+      const next = [...prev];
+      const seen = new Set(next.map((p) => p.pokemonId));
+      for (const p of pokemonData.pokemon) {
+        if (!seen.has(p.pokemonId)) {
+          next.push(p);
+        }
+      }
+      return next;
+    });
+
+    const total = pokemonData.total ?? 0;
+    const currentCount = (items.length || 0) + (pokemonData.pokemon?.length || 0);
+    setHasMore(currentCount < total);
+    setIsLoadingMore(false);
+  }, [pokemonData]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // IntersectionObserver for infinite scroll
+  useEffect(() => {
+    if (showFavorites) return;
+    const el = sentinelRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry.isIntersecting && hasMore && !isLoadingMore && (pokemonData !== undefined)) {
+          setIsLoadingMore(true);
+          setOffset((o) => o + BATCH_LIMIT);
+        }
+      },
+      { rootMargin: "200px" }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasMore, isLoadingMore, showFavorites, pokemonData]);
+
+  // Removed page reset effect; infinite scroll manages fetching via offset.
+
+  const displayPokemon = showFavorites ? (favorites || []) : items;
   const favoriteIds = Array.isArray(favorites) ? favorites.map((f) => f.pokemonId) : [];
-  const isLoading = pokemonData === undefined && !showFavorites;
+  const isInitialLoading = !showFavorites && pokemonData === undefined && items.length === 0;
 
   const totalItems = showFavorites ? (favorites?.length ?? 0) : (pokemonData?.total ?? 0);
   const totalPages = Math.max(1, Math.ceil(totalItems / INITIAL_LIMIT));
@@ -216,11 +266,16 @@ export default function Pokedex() {
               <h2 className="text-2xl font-bold tracking-tight">
                 {showFavorites ? "Your Favorites" : "Pokémon"}
               </h2>
+              {!showFavorites && (
+                <p className="text-sm text-muted-foreground">
+                  {items.length} loaded{pokemonData?.total ? ` of ${pokemonData.total}` : ""}
+                </p>
+              )}
             </div>
           </div>
         </motion.div>
 
-        {!isLoading && displayPokemon.length === 0 && !pokemonData?.total && (
+        {!isInitialLoading && displayPokemon.length === 0 && !pokemonData?.total && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -232,89 +287,62 @@ export default function Pokedex() {
                 No Pokémon data found. Click "Refresh Data" to load Pokémon from the API.
               </AlertDescription>
             </Alert>
-            <Button
-              onClick={handleDataRefresh}
-              className="mt-4 gap-2"
-            >
+            <Button onClick={handleDataRefresh} className="mt-4 gap-2">
               <RefreshCw className="h-4 w-4" />
               Load Pokémon Data
             </Button>
           </motion.div>
         )}
 
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.3 }}
-        >
+        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }}>
           <PokemonGrid
-            key={`${showFavorites ? "fav" : "all"}-${page}-${searchQuery}-${selectedTypes.join(",")}-${selectedGeneration ?? "all"}`}
+            key={`${showFavorites ? "fav" : "infinite"}-${selectedGeneration ?? "all"}-${selectedTypes.join(",")}-${searchQuery}`}
             pokemon={displayPokemon}
             favorites={favoriteIds}
             onFavoriteToggle={handleFavoriteToggle}
-            isLoading={isLoading}
+            isLoading={isInitialLoading}
           />
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="mt-8"
-        >
-          {false && (
-            <div className="flex justify-center">
-              <Pagination>
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setPage((p) => Math.max(1, p - 1));
-                      }}
-                      aria-disabled={page === 1}
-                      className={page === 1 ? "pointer-events-none opacity-50" : ""}
-                    />
-                  </PaginationItem>
+        {/* Load-more controls and sentinel */}
+        {!showFavorites && (
+          <div className="mt-6 flex flex-col items-center gap-3">
+            {isLoadingMore && (
+              <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Loading more Pokémon...
+              </div>
+            )}
 
-                  {getPageNumbers(page, totalPages).map((p, idx) =>
-                    p === "ellipsis" ? (
-                      <PaginationItem key={`e-${idx}`}>
-                        <PaginationEllipsis />
-                      </PaginationItem>
-                    ) : (
-                      <PaginationItem key={p}>
-                        <PaginationLink
-                          href="#"
-                          isActive={p === page}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setPage(p as number);
-                            window.scrollTo({ top: 0, behavior: "smooth" });
-                          }}
-                        >
-                          {p}
-                        </PaginationLink>
-                      </PaginationItem>
-                    )
-                  )}
+            {!hasMore && items.length > 0 && (
+              <div className="text-muted-foreground text-sm">No more Pokémon</div>
+            )}
 
-                  <PaginationItem>
-                    <PaginationNext
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setPage((p) => Math.min(totalPages, p + 1));
-                      }}
-                      aria-disabled={page === totalPages}
-                      className={page === totalPages ? "pointer-events-none opacity-50" : ""}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-            </div>
-          )}
-        </motion.div>
+            {hasMore && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (isLoadingMore) return;
+                  setIsLoadingMore(true);
+                  setOffset((o) => o + BATCH_LIMIT);
+                }}
+                disabled={isLoadingMore}
+              >
+                {isLoadingMore ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Loading...
+                  </>
+                ) : (
+                  "Load More"
+                )}
+              </Button>
+            )}
+
+            {/* Sentinel for intersection observer */}
+            <div ref={sentinelRef} aria-hidden className="h-1 w-full" />
+          </div>
+        )}
       </main>
     </div>
   );
