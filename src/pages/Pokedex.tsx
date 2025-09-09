@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, AlertCircle, RefreshCw } from "lucide-react";
@@ -45,7 +45,7 @@ export default function Pokedex() {
   const [items, setItems] = useState<any[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  // Removed sentinelRef since infinite scroll is disabled; manual Load More only
 
   const INITIAL_LIMIT = 1025; // Show all; removes need for pagination
 
@@ -171,26 +171,7 @@ export default function Pokedex() {
     setIsLoadingMore(false);
   }, [pokemonData]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // IntersectionObserver for infinite scroll
-  useEffect(() => {
-    if (showFavorites) return;
-    const el = sentinelRef.current;
-    if (!el) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        if (entry.isIntersecting && hasMore && !isLoadingMore && (pokemonData !== undefined)) {
-          setIsLoadingMore(true);
-          setOffset((o) => o + BATCH_LIMIT);
-        }
-      },
-      { rootMargin: "200px" }
-    );
-
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [hasMore, isLoadingMore, showFavorites, pokemonData]);
+  // Removed IntersectionObserver to disable auto-loading; now only manual "Load More"
 
   // Removed page reset effect; infinite scroll manages fetching via offset.
 
@@ -325,8 +306,7 @@ export default function Pokedex() {
               </Button>
             )}
 
-            {/* Sentinel for intersection observer */}
-            <div ref={sentinelRef} aria-hidden className="h-1 w-full" />
+            {/* Removed sentinel; manual loading only */}
           </div>
         )}
       </main>
