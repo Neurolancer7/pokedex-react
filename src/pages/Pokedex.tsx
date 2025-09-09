@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, AlertCircle, RefreshCw } from "lucide-react";
@@ -45,6 +45,8 @@ export default function Pokedex() {
   const [items, setItems] = useState<any[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  // Add ref to ensure auto-fetch only triggers once
+  const autoFetchRef = useRef(false);
   // Removed sentinelRef since infinite scroll is disabled; manual Load More only
 
   const INITIAL_LIMIT = 1025; // Show all; removes need for pagination
@@ -130,17 +132,18 @@ export default function Pokedex() {
     try {
       // Start loading state
       setIsRefreshing(true);
-      toast.promise(
-        fetchPokemonData({ limit: 1025, offset: 0 }),
-        {
-          loading: "Fetching Pokémon data...",
-          success: (data) => {
-            const count = (data as any)?.cached ?? 0;
-            return `Pokémon data updated successfully! Cached ${count} entries.`;
-          },
-          error: (err) => (err instanceof Error ? err.message : "Failed to fetch Pokémon data"),
-        }
-      );
+
+      const promise = fetchPokemonData({ limit: 1025, offset: 0 });
+      toast.promise(promise, {
+        loading: "Fetching Pokémon data...",
+        success: (data) => {
+          const count = (data as any)?.cached ?? 0;
+          return `Pokémon data updated successfully! Cached ${count} entries.`;
+        },
+        error: (err) => (err instanceof Error ? err.message : "Failed to fetch Pokémon data"),
+      });
+
+      await promise;
     } catch (error) {
       console.error("Error refreshing data:", error);
       const message = error instanceof Error ? error.message : "Unexpected error while refreshing data";
@@ -150,6 +153,32 @@ export default function Pokedex() {
       setIsRefreshing(false);
     }
   };
+
+  // Auto-fetch and cache Pokémon on first load if DB is empty
+  useEffect(() => {
+    if (showFavorites) return;
+    if (!pokemonData) return; // wait for first response
+    const total = pokemonData.total ?? 0;
+    if (total > 0) return;
+    if (autoFetchRef.current) return;
+
+    autoFetchRef.current = true;
+    setIsRefreshing(true);
+
+    const promise = fetchPokemonData({ limit: 1025, offset: 0 });
+    toast.promise(promise, {
+      loading: "Preparing Pokédex…",
+      success: (data) => {
+        const count = (data as any)?.cached ?? 0;
+        return `Pokémon data loaded! Cached ${count} entries.`;
+      },
+      error: (err) => (err instanceof Error ? err.message : "Failed to fetch Pokémon data"),
+    });
+
+    promise.finally(() => {
+      setIsRefreshing(false);
+    });
+  }, [pokemonData, showFavorites, fetchPokemonData]);
 
   useEffect(() => {
     setItems([]);
