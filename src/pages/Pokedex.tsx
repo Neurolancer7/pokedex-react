@@ -287,14 +287,15 @@ export default function Pokedex() {
 
         {/* Load-more controls and sentinel */}
         {!showFavorites && (
-          <div className="mt-6 flex flex-col items-center gap-3">
+          <div className="mt-8 flex flex-col items-center gap-3">
             {!hasMore && items.length > 0 && (
               <div className="text-muted-foreground text-sm">No more Pokémon</div>
             )}
 
             {hasMore && (
               <Button
-                variant="outline"
+                variant="default"
+                className="w-full sm:w-auto px-6 h-11 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md hover:from-blue-500 hover:to-purple-500 active:scale-[0.99] transition-all disabled:opacity-70 disabled:cursor-not-allowed"
                 onClick={() => {
                   if (isLoadingMore) return;
                   setIsLoadingMore(true);
