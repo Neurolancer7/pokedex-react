@@ -1,5 +1,5 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { query, QueryCtx } from "./_generated/server";
+import { query } from "./_generated/server";
 import { mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { internalMutation } from "./_generated/server";
@@ -27,7 +27,7 @@ export const currentUser = query({
  * @param ctx
  * @returns
  */
-export const getCurrentUser = async (ctx: QueryCtx) => {
+export const getCurrentUser = async (ctx: any) => {
   const userId = await getAuthUserId(ctx);
   if (userId === null) {
     return null;
@@ -44,20 +44,29 @@ export const updateProfile = mutation({
     image: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) {
-      throw new Error("Not authenticated");
-    }
-    const updates: Record<string, unknown> = {};
-    if (args.name !== undefined) updates.name = args.name;
-    if (args.image !== undefined) updates.image = args.image;
+    try {
+      const userId = await getAuthUserId(ctx);
+      if (!userId) {
+        throw new Error("Not authenticated");
+      }
+      const updates: Record<string, unknown> = {};
+      if (args.name !== undefined) updates.name = args.name;
+      if (args.image !== undefined) updates.image = args.image;
 
-    if (Object.keys(updates).length === 0) {
+      if (Object.keys(updates).length === 0) {
+        return null;
+      }
+
+      await ctx.db.patch(userId, updates);
       return null;
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Unknown error in users.updateProfile";
+      console.error("users.updateProfile error:", err);
+      throw new Error(message);
     }
-
-    await ctx.db.patch(userId, updates);
-    return null;
   },
 });
 
@@ -69,15 +78,24 @@ export const updateProfileInternal = internalMutation({
     image: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const updates: Record<string, unknown> = {};
-    if (args.name !== undefined) updates.name = args.name;
-    if (args.image !== undefined) updates.image = args.image;
+    try {
+      const updates: Record<string, unknown> = {};
+      if (args.name !== undefined) updates.name = args.name;
+      if (args.image !== undefined) updates.image = args.image;
 
-    if (Object.keys(updates).length === 0) {
+      if (Object.keys(updates).length === 0) {
+        return null;
+      }
+
+      await ctx.db.patch(args.userId, updates);
       return null;
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Unknown error in users.updateProfileInternal";
+      console.error("users.updateProfileInternal error:", err);
+      throw new Error(message);
     }
-
-    await ctx.db.patch(args.userId, updates);
-    return null;
   },
 });

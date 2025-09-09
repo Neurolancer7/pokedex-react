@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, AlertCircle, RefreshCw } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
 import { api } from "@/convex/_generated/api";
@@ -13,15 +13,6 @@ import { PokemonSearch } from "@/components/PokemonSearch";
 import { PokemonGrid } from "@/components/PokemonGrid";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
 
 class ErrorBoundary extends React.Component<{ onRetry: () => void; children: React.ReactNode }, { hasError: boolean; errorMessage?: string }> {
   constructor(props: { onRetry: () => void; children: React.ReactNode }) {
@@ -172,6 +163,12 @@ export default function Pokedex() {
   };
 
   const handleFilterChange = (filters: { types: string[]; generation?: number }) => {
+    // Immediately reset pagination on filter changes to avoid race conditions
+    setItems([]);
+    setOffset(0);
+    setHasMore(true);
+    setIsLoadingMore(false);
+
     setSelectedTypes(filters.types);
     setSelectedGeneration(filters.generation);
   };

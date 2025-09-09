@@ -3,7 +3,7 @@ import { query, mutation } from "./_generated/server";
 import { getCurrentUser } from "./users";
 import type { Doc } from "./_generated/dataModel";
 
-// Get paginated list of Pokemon
+// Get paginated list of Pokemon with validation and error handling
 export const list = query({
   args: {
     limit: v.optional(v.number()),
@@ -13,194 +13,278 @@ export const list = query({
     generation: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const limit = args.limit || 20;
-    const offset = args.offset || 0;
-
-    let results: any[] = [];
-    const hasValidGeneration =
-      typeof args.generation === "number" &&
-      Number.isFinite(args.generation) &&
-      args.generation > 0;
-
-    if (hasValidGeneration) {
-      // First try by_generation index
-      results = await ctx.db
-        .query("pokemon")
-        .withIndex("by_generation", (q) =>
-          q.eq("generation", args.generation as number),
-        )
-        .collect();
-
-      // Fallback: if none found via generation index, use Pokedex ID ranges
-      if (results.length === 0) {
-        const range = GEN_RANGES[args.generation as number];
-        if (range) {
-          results = await ctx.db
-            .query("pokemon")
-            .withIndex("by_pokemon_id", (q) =>
-              q.gte("pokemonId", range.start).lte("pokemonId", range.end),
-            )
-            .collect();
-        }
+    try {
+      // Validate pagination args
+      const limit = args.limit ?? 20;
+      const offset = args.offset ?? 0;
+      if (!Number.isFinite(limit) || limit < 0 || limit > 1025) {
+        throw new Error("Invalid 'limit' provided. It must be between 0 and 1025.");
       }
-    } else {
-      results = await ctx.db.query("pokemon").collect();
+      if (!Number.isFinite(offset) || offset < 0) {
+        throw new Error("Invalid 'offset' provided. It must be a non-negative number.");
+      }
+
+      // Normalize filters
+      const search = args.search?.trim();
+      const types = (args.types ?? []).map((t) => t.toLowerCase());
+      const hasValidNumber =
+        typeof args.generation === "number" &&
+        Number.isFinite(args.generation);
+      const inAllowedRange =
+        hasValidNumber && (args.generation as number) >= 1 && (args.generation as number) <= 9;
+      const hasValidGeneration = hasValidNumber && inAllowedRange;
+
+      if (hasValidNumber && !inAllowedRange) {
+        throw new Error("Invalid 'generation' provided. It must be between 1 and 9.");
+      }
+
+      let results: any[] = [];
+
+      if (hasValidGeneration) {
+        // First try by_generation index
+        results = await ctx.db
+          .query("pokemon")
+          .withIndex("by_generation", (q) =>
+            q.eq("generation", args.generation as number),
+          )
+          .collect();
+
+        // Fallback: if none found via generation index, use Pokédex ID ranges
+        if (results.length === 0) {
+          const range = GEN_RANGES[args.generation as number];
+          if (range) {
+            results = await ctx.db
+              .query("pokemon")
+              .withIndex("by_pokemon_id", (q) =>
+                q.gte("pokemonId", range.start).lte("pokemonId", range.end),
+              )
+              .collect();
+          }
+        }
+      } else {
+        results = await ctx.db.query("pokemon").collect();
+      }
+
+      // De-duplicate by pokemonId (keep first by creation order)
+      const unique = new Map<number, any>();
+      for (const row of results) {
+        if (!unique.has(row.pokemonId)) unique.set(row.pokemonId, row);
+      }
+      results = Array.from(unique.values());
+
+      // Apply search filter
+      if (search) {
+        const searchLower = search.toLowerCase();
+        results = results.filter(
+          (pokemon) =>
+            pokemon.name.toLowerCase().includes(searchLower) ||
+            pokemon.pokemonId.toString().includes(searchLower),
+        );
+      }
+
+      // Apply type filter (case-insensitive)
+      if (types.length > 0) {
+        results = results.filter((pokemon) =>
+          pokemon.types.some((t: string) => types.includes(t.toLowerCase())),
+        );
+      }
+
+      // Sort by Pokemon ID
+      results.sort((a, b) => a.pokemonId - b.pokemonId);
+
+      // Apply pagination with a safe offset to avoid empty results after filter changes
+      const safeOffset = offset >= results.length ? 0 : offset;
+      const paginatedResults = results.slice(safeOffset, safeOffset + limit);
+
+      return {
+        pokemon: paginatedResults,
+        total: results.length,
+        hasMore: safeOffset + limit < results.length,
+      };
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Unknown error in pokemon.list";
+      console.error("pokemon.list error:", err);
+      throw new Error(message);
     }
-
-    // De-duplicate by pokemonId (keep first by creation order)
-    const unique = new Map<number, any>();
-    for (const row of results) {
-      if (!unique.has(row.pokemonId)) unique.set(row.pokemonId, row);
-    }
-    results = Array.from(unique.values());
-
-    // Apply search filter
-    if (args.search) {
-      const searchLower = args.search.toLowerCase();
-      results = results.filter((pokemon) =>
-        pokemon.name.toLowerCase().includes(searchLower) ||
-        pokemon.pokemonId.toString().includes(searchLower),
-      );
-    }
-
-    // Apply type filter (case-insensitive)
-    if (args.types && args.types.length > 0) {
-      const filterTypes = args.types.map((t) => t.toLowerCase());
-      results = results.filter((pokemon) =>
-        pokemon.types.some((t: string) => filterTypes.includes(t.toLowerCase())),
-      );
-    }
-
-    // Sort by Pokemon ID
-    results.sort((a, b) => a.pokemonId - b.pokemonId);
-
-    // Apply pagination
-    const paginatedResults = results.slice(offset, offset + limit);
-
-    return {
-      pokemon: paginatedResults,
-      total: results.length,
-      hasMore: offset + limit < results.length,
-    };
   },
 });
 
-// Get single Pokemon by ID
+// Get single Pokemon by ID with validation and error handling
 export const getById = query({
   args: { pokemonId: v.number() },
   handler: async (ctx, args) => {
-    // Safely get first match instead of unique()
-    const pokemonResults = await ctx.db
-      .query("pokemon")
-      .withIndex("by_pokemon_id", (q) => q.eq("pokemonId", args.pokemonId))
-      .collect();
-    const pokemon = pokemonResults[0] ?? null;
-    
-    if (!pokemon) return null;
+    try {
+      if (!Number.isFinite(args.pokemonId) || args.pokemonId <= 0) {
+        throw new Error("Invalid 'pokemonId'. It must be a positive number.");
+      }
 
-    // Species may also have duplicates, take first match
-    const speciesResults = await ctx.db
-      .query("pokemonSpecies")
-      .withIndex("by_pokemon_id", (q) => q.eq("pokemonId", args.pokemonId))
-      .collect();
-    const species = speciesResults[0] ?? null;
+      const pokemonResults = await ctx.db
+        .query("pokemon")
+        .withIndex("by_pokemon_id", (q) => q.eq("pokemonId", args.pokemonId))
+        .collect();
+      const pokemon = pokemonResults[0] ?? null;
 
-    return {
-      ...pokemon,
-      species,
-    };
+      if (!pokemon) return null;
+
+      const speciesResults = await ctx.db
+        .query("pokemonSpecies")
+        .withIndex("by_pokemon_id", (q) => q.eq("pokemonId", args.pokemonId))
+        .collect();
+      const species = speciesResults[0] ?? null;
+
+      return {
+        ...pokemon,
+        species,
+      };
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Unknown error in pokemon.getById";
+      console.error("pokemon.getById error:", err);
+      throw new Error(message);
+    }
   },
 });
 
-// Get Pokemon types
+// Get Pokemon types with error handling
 export const getTypes = query({
   args: {},
   handler: async (ctx) => {
-    return await ctx.db.query("pokemonTypes").collect();
+    try {
+      return await ctx.db.query("pokemonTypes").collect();
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Unknown error in pokemon.getTypes";
+      console.error("pokemon.getTypes error:", err);
+      throw new Error(message);
+    }
   },
 });
 
-// Add Pokemon to favorites
+// Add Pokemon to favorites with validation and error handling
 export const addToFavorites = mutation({
   args: { pokemonId: v.number() },
   handler: async (ctx, args) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) {
-      throw new Error("Must be authenticated to add favorites");
+    try {
+      if (!Number.isFinite(args.pokemonId) || args.pokemonId <= 0) {
+        throw new Error("Invalid 'pokemonId'. It must be a positive number.");
+      }
+
+      // Ensure the Pokémon exists
+      const pokemonExists = await ctx.db
+        .query("pokemon")
+        .withIndex("by_pokemon_id", (q) => q.eq("pokemonId", args.pokemonId))
+        .collect();
+
+      if (pokemonExists.length === 0) {
+        throw new Error("Pokemon not found");
+      }
+
+      const user = await getCurrentUser(ctx);
+      if (!user) {
+        throw new Error("Must be authenticated to add favorites");
+      }
+
+      const existing = await ctx.db
+        .query("favorites")
+        .withIndex("by_user_and_pokemon", (q) =>
+          q.eq("userId", user._id).eq("pokemonId", args.pokemonId),
+        )
+        .unique();
+
+      if (existing) {
+        throw new Error("Pokemon already in favorites");
+      }
+
+      return await ctx.db.insert("favorites", {
+        userId: user._id,
+        pokemonId: args.pokemonId,
+      });
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Unknown error in pokemon.addToFavorites";
+      console.error("pokemon.addToFavorites error:", err);
+      throw new Error(message);
     }
-    
-    // Check if already favorited
-    const existing = await ctx.db
-      .query("favorites")
-      .withIndex("by_user_and_pokemon", (q) => 
-        q.eq("userId", user._id).eq("pokemonId", args.pokemonId)
-      )
-      .unique();
-    
-    if (existing) {
-      throw new Error("Pokemon already in favorites");
-    }
-    
-    return await ctx.db.insert("favorites", {
-      userId: user._id,
-      pokemonId: args.pokemonId,
-    });
   },
 });
 
-// Remove Pokemon from favorites
+// Remove Pokemon from favorites with validation and error handling
 export const removeFromFavorites = mutation({
   args: { pokemonId: v.number() },
   handler: async (ctx, args) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) {
-      throw new Error("Must be authenticated to remove favorites");
+    try {
+      if (!Number.isFinite(args.pokemonId) || args.pokemonId <= 0) {
+        throw new Error("Invalid 'pokemonId'. It must be a positive number.");
+      }
+
+      const user = await getCurrentUser(ctx);
+      if (!user) {
+        throw new Error("Must be authenticated to remove favorites");
+      }
+
+      const favorite = await ctx.db
+        .query("favorites")
+        .withIndex("by_user_and_pokemon", (q) =>
+          q.eq("userId", user._id).eq("pokemonId", args.pokemonId),
+        )
+        .unique();
+
+      if (!favorite) {
+        throw new Error("Pokemon not in favorites");
+      }
+
+      return await ctx.db.delete(favorite._id);
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Unknown error in pokemon.removeFromFavorites";
+      console.error("pokemon.removeFromFavorites error:", err);
+      throw new Error(message);
     }
-    
-    const favorite = await ctx.db
-      .query("favorites")
-      .withIndex("by_user_and_pokemon", (q) => 
-        q.eq("userId", user._id).eq("pokemonId", args.pokemonId)
-      )
-      .unique();
-    
-    if (!favorite) {
-      throw new Error("Pokemon not in favorites");
-    }
-    
-    return await ctx.db.delete(favorite._id);
   },
 });
 
-// Get user's favorites
+// Get user's favorites with error handling
 export const getFavorites = query({
   args: {},
   handler: async (ctx) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) return [];
-    
-    const favorites = await ctx.db
-      .query("favorites")
-      .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .collect();
-    
-    const pokemonIds = favorites.map(f => f.pokemonId);
-    const pokemon = await Promise.all(
-      pokemonIds.map(async (id) => {
-        const results = await ctx.db
-          .query("pokemon")
-          .withIndex("by_pokemon_id", (q) => q.eq("pokemonId", id))
-          .collect();
-        return results[0] ?? null;
-      })
-    );
-    
-    // Ensure non-null return type
-    const pokemonDocs = pokemon.filter(
-      (p): p is Doc<"pokemon"> => p !== null
-    );
-    
-    return pokemonDocs;
+    try {
+      const user = await getCurrentUser(ctx);
+      if (!user) return [];
+
+      const favorites = await ctx.db
+        .query("favorites")
+        .withIndex("by_user", (q) => q.eq("userId", user._id))
+        .collect();
+
+      const pokemonIds = favorites.map((f) => f.pokemonId);
+      const pokemon = await Promise.all(
+        pokemonIds.map(async (id) => {
+          const results = await ctx.db
+            .query("pokemon")
+            .withIndex("by_pokemon_id", (q) => q.eq("pokemonId", id))
+            .collect();
+          return results[0] ?? null;
+        }),
+      );
+
+      const pokemonDocs = pokemon.filter(
+        (p): p is Doc<"pokemon"> => p !== null,
+      );
+
+      return pokemonDocs;
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Unknown error in pokemon.getFavorites";
+      console.error("pokemon.getFavorites error:", err);
+      throw new Error(message);
+    }
   },
 });
 

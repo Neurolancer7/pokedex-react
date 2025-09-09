@@ -67,11 +67,11 @@ export function PokemonGrid({
     const desired = Math.floor(targetPage);
 
     if (desired < 1) {
-      toast.warning("You're already on the first page.");
+      toast.info("You're already on the first page.");
       return;
     }
     if (desired > safeTotal) {
-      toast.warning("You're already on the last page.");
+      toast.info("You're already on the last page.");
       return;
     }
     if (desired === currentPage) return;

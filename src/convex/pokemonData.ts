@@ -84,38 +84,47 @@ export const fetchAndCachePokemon = action({
 });
 
 async function cacheTypes(ctx: any) {
-  const typesResponse = await fetch("https://pokeapi.co/api/v2/type");
-  // Add response.ok check for types endpoint
-  if (!typesResponse.ok) {
-    throw new Error(`PokéAPI types request failed: ${typesResponse.status} ${typesResponse.statusText}`);
-  }
-  const typesData = await typesResponse.json();
-  
-  const typeColors: Record<string, string> = {
-    normal: "#A8A878",
-    fire: "#F08030",
-    water: "#6890F0",
-    electric: "#F8D030",
-    grass: "#78C850",
-    ice: "#98D8D8",
-    fighting: "#C03028",
-    poison: "#A040A0",
-    ground: "#E0C068",
-    flying: "#A890F0",
-    psychic: "#F85888",
-    bug: "#A8B820",
-    rock: "#B8A038",
-    ghost: "#705898",
-    dragon: "#7038F8",
-    dark: "#705848",
-    steel: "#B8B8D0",
-    fairy: "#EE99AC",
-  };
-  
-  for (const type of typesData.results) {
-    await ctx.runMutation(internal.pokemonInternal.cacheType, {
-      name: type.name,
-      color: typeColors[type.name] || "#68A090",
-    });
+  try {
+    const typesResponse = await fetch("https://pokeapi.co/api/v2/type");
+    // Add response.ok check for types endpoint
+    if (!typesResponse.ok) {
+      throw new Error(
+        `PokéAPI types request failed: ${typesResponse.status} ${typesResponse.statusText}`
+      );
+    }
+    const typesData = await typesResponse.json();
+
+    const typeColors: Record<string, string> = {
+      normal: "#A8A878",
+      fire: "#F08030",
+      water: "#6890F0",
+      electric: "#F8D030",
+      grass: "#78C850",
+      ice: "#98D8D8",
+      fighting: "#C03028",
+      poison: "#A040A0",
+      ground: "#E0C068",
+      flying: "#A890F0",
+      psychic: "#F85888",
+      bug: "#A8B820",
+      rock: "#B8A038",
+      ghost: "#705898",
+      dragon: "#7038F8",
+      dark: "#705848",
+      steel: "#B8B8D0",
+      fairy: "#EE99AC",
+    };
+
+    for (const type of typesData.results) {
+      await ctx.runMutation(internal.pokemonInternal.cacheType, {
+        name: type.name,
+        color: typeColors[type.name] || "#68A090",
+      });
+    }
+  } catch (err) {
+    const message =
+      err instanceof Error ? err.message : "Unknown error in cacheTypes";
+    console.error("cacheTypes error:", err);
+    throw new Error(message);
   }
 }

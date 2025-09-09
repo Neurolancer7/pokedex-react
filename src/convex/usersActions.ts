@@ -11,17 +11,26 @@ export const updateProfile = action({
     image: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) {
-      throw new Error("Not authenticated");
+    try {
+      const userId = await getAuthUserId(ctx);
+      if (!userId) {
+        throw new Error("Not authenticated");
+      }
+
+      await ctx.runMutation(internal.users.updateProfileInternal, {
+        userId,
+        name: args.name,
+        image: args.image,
+      });
+
+      return null;
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Unknown error in usersActions.updateProfile";
+      console.error("usersActions.updateProfile error:", err);
+      throw new Error(message);
     }
-
-    await ctx.runMutation(internal.users.updateProfileInternal, {
-      userId,
-      name: args.name,
-      image: args.image,
-    });
-
-    return null;
   },
 });
