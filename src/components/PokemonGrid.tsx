@@ -212,6 +212,8 @@ export function PokemonGrid({
           <motion.div
             key={poke.pokemonId}
             variants={cardVariants}
+            initial="visible"
+            animate="visible"
           >
             <PokemonCard
               pokemon={poke}
