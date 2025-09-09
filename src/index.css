@@ -155,3 +155,39 @@
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+
+/* Bounce + Spin animation (lightweight utility) */
+@keyframes bounce-spin {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-6px) rotate(90deg);
+  }
+  50% {
+    transform: translateY(0) rotate(180deg);
+  }
+  75% {
+    transform: translateY(-6px) rotate(270deg);
+  }
+}
+
+/* Utility class: apply to any element when you want bounce+spin */
+.animate-bounce-spin {
+  animation: bounce-spin 1.2s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Specific class for Pokéball-sized elements (button-relative feel) */
+.pokeball-float {
+  animation: bounce-spin 1.4s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .animate-bounce-spin,
+  .pokeball-float {
+    animation: none !important;
+  }
+}
