@@ -1,9 +1,8 @@
 import { motion } from "framer-motion";
-import { Heart, Database, Menu } from "lucide-react";
+import { Heart, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "react-router";
-import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
@@ -13,8 +12,6 @@ interface PokemonHeaderProps {
   onThemeToggle: () => void;
   showFavorites: boolean;
   onFavoritesToggle: () => void;
-  onDataRefresh: () => void;
-  isRefreshing?: boolean;
 }
 
 export function PokemonHeader({
@@ -22,8 +19,6 @@ export function PokemonHeader({
   onThemeToggle,
   showFavorites,
   onFavoritesToggle,
-  onDataRefresh,
-  isRefreshing = false,
 }: PokemonHeaderProps) {
   const { isAuthenticated, user, signOut } = useAuth();
   const navigate = useNavigate();
@@ -63,27 +58,6 @@ export function PokemonHeader({
 
           {/* Actions - Desktop: simplified to just controls */}
           <div className="hidden sm:flex items-center gap-1.5 md:gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onDataRefresh}
-              className="gap-2 px-2 sm:px-3"
-              aria-label="Refresh Data"
-              disabled={isRefreshing}
-            >
-              {isRefreshing ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="hidden sm:inline">Refreshing...</span>
-                </>
-              ) : (
-                <>
-                  <Database className="h-4 w-4" />
-                  <span className="hidden sm:inline">Refresh Data</span>
-                </>
-              )}
-            </Button>
-
             {isAuthenticated && (
               <Button
                 variant={showFavorites ? "default" : "ghost"}
@@ -141,29 +115,6 @@ export function PokemonHeader({
                 <div className="mt-3 space-y-2">
                   {/* Quick Actions */}
                   <div className="px-1 text-xs font-medium text-muted-foreground">Quick actions</div>
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start gap-2 py-3"
-                    onClick={() => {
-                      onDataRefresh();
-                      setMenuOpen(false);
-                    }}
-                    disabled={isRefreshing}
-                    aria-label="Refresh Data"
-                  >
-                    {isRefreshing ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Refreshing...
-                      </>
-                    ) : (
-                      <>
-                        <Database className="h-4 w-4" />
-                        Refresh Data
-                      </>
-                    )}
-                  </Button>
-
                   {isAuthenticated && (
                     <Button
                       variant={showFavorites ? "default" : "ghost"}

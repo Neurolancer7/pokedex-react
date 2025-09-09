@@ -98,8 +98,6 @@ export default function Region() {
         }}
         showFavorites={false}
         onFavoritesToggle={() => {}}
-        onDataRefresh={() => {}}
-        isRefreshing={false}
       />
 
       {/* Simple region nav bar row */}

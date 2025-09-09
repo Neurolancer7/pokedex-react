@@ -223,8 +223,6 @@ export default function Pokedex() {
         onThemeToggle={handleThemeToggle}
         showFavorites={showFavorites}
         onFavoritesToggle={() => setShowFavorites(!showFavorites)}
-        onDataRefresh={handleDataRefresh}
-        isRefreshing={isRefreshing}
       />
 
       <main className="container mx-auto px-4 py-8">
@@ -256,11 +254,6 @@ export default function Pokedex() {
               <h2 className="text-2xl font-bold tracking-tight">
                 {showFavorites ? "Your Favorites" : "Pokémon"}
               </h2>
-              {!showFavorites && (
-                <p className="text-sm text-muted-foreground">
-                  {items.length} loaded{pokemonData?.total ? ` of ${pokemonData.total}` : ""}
-                </p>
-              )}
             </div>
           </div>
         </motion.div>
@@ -274,13 +267,9 @@ export default function Pokedex() {
             <Alert className="max-w-md mx-auto">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                No Pokémon data found. Click "Refresh Data" to load Pokémon from the API.
+                No Pokémon data found.
               </AlertDescription>
             </Alert>
-            <Button onClick={handleDataRefresh} className="mt-4 gap-2">
-              <RefreshCw className="h-4 w-4" />
-              Load Pokémon Data
-            </Button>
           </motion.div>
         )}
 
