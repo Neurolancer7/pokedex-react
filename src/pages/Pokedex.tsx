@@ -60,6 +60,15 @@ export default function Pokedex() {
     generation: selectedGeneration,
   });
 
+  // Prefetch next page to make clicking "Load More" feel instant
+  const nextPokemonData = useConvexQuery(api.pokemon.list, {
+    limit: showFavorites ? 0 : BATCH_LIMIT,
+    offset: showFavorites ? 0 : offset + BATCH_LIMIT,
+    search: searchQuery || undefined,
+    types: selectedTypes.length > 0 ? selectedTypes : undefined,
+    generation: selectedGeneration,
+  });
+
   const favorites = useConvexQuery(
     api.pokemon.getFavorites,
     isAuthenticated ? {} : "skip"
@@ -293,18 +302,49 @@ export default function Pokedex() {
             )}
 
             {hasMore && (
-              <Button
-                variant="default"
-                className="w-full sm:w-auto px-6 h-11 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md hover:from-blue-500 hover:to-purple-500 active:scale-[0.99] transition-all disabled:opacity-70 disabled:cursor-not-allowed"
-                onClick={() => {
-                  if (isLoadingMore) return;
-                  setIsLoadingMore(true);
-                  setOffset((o) => o + BATCH_LIMIT);
-                }}
-                disabled={isLoadingMore}
-              >
-                Load More
-              </Button>
+              <>
+                {/* Simplified: always render a single Load More button, disable during loading */}
+                <Button
+                  variant="default"
+                  className="w-full sm:w-auto px-6 h-11 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md hover:from-blue-500 hover:to-purple-500 active:scale-[0.99] transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                  onClick={() => {
+                    if (isLoadingMore) return;
+                    setIsLoadingMore(true);
+
+                    // If prefetched next page is ready, append immediately for instant UX
+                    const ready = !showFavorites && nextPokemonData && Array.isArray(nextPokemonData.pokemon);
+                    if (ready) {
+                      setItems((prev) => {
+                        const seen = new Set(prev.map((p) => p.pokemonId));
+                        const merged = [...prev];
+                        for (const p of nextPokemonData.pokemon) {
+                          if (!seen.has(p.pokemonId)) merged.push(p);
+                        }
+                        return merged;
+                      });
+
+                      const total = nextPokemonData.total ?? 0;
+                      const currentCount = (items.length || 0) + (nextPokemonData.pokemon?.length || 0);
+                      setHasMore(currentCount < total);
+
+                      // Advance offset so the main query aligns with what we just appended
+                      setOffset((o) => o + BATCH_LIMIT);
+
+                      // We already appended; no need to wait on the round-trip
+                      setIsLoadingMore(false);
+                    } else {
+                      // Fallback: trigger fetch and let the effect append + stop loading
+                      setOffset((o) => o + BATCH_LIMIT);
+                    }
+                  }}
+                  disabled={isLoadingMore}
+                  aria-busy={isLoadingMore}
+                  aria-live="polite"
+                  aria-label="Load more Pokémon"
+                >
+                  Load More
+                </Button>
+              </>
             )}
 
             {/* Removed sentinel; manual loading only */}
