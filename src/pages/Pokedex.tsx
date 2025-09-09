@@ -292,47 +292,64 @@ export default function Pokedex() {
 
             {hasMore && (
               <>
-                {/* Simplified: always render a single Load More button, disable during loading */}
-                <Button
-                  variant="default"
-                  className="w-full sm:w-auto px-6 h-11 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md hover:from-blue-500 hover:to-purple-500 active:scale-[0.99] transition-all disabled:opacity-70 disabled:cursor-not-allowed"
-                  onClick={() => {
-                    if (isLoadingMore) return;
-                    setIsLoadingMore(true);
+                {/* Show animated Pokéball loader while loading, else the Load More button */}
+                {isLoadingMore ? (
+                  <div
+                    className="w-full sm:w-auto flex items-center justify-center"
+                    aria-busy="true"
+                    aria-live="polite"
+                  >
+                    <div className="w-full sm:w-auto px-6 h-11 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md flex items-center justify-center">
+                      <img
+                        src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png"
+                        alt="Loading Pokéball"
+                        className="h-11 w-11 animate-bounce-spin"
+                      />
+                      <span className="sr-only">Loading more Pokémon…</span>
+                    </div>
+                  </div>
+                ) : (
+                  <Button
+                    variant="default"
+                    className="w-full sm:w-auto px-6 h-11 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md hover:from-blue-500 hover:to-purple-500 active:scale-[0.99] transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                    onClick={() => {
+                      if (isLoadingMore) return;
+                      setIsLoadingMore(true);
 
-                    // If prefetched next page is ready, append immediately for instant UX
-                    const ready = !showFavorites && nextPokemonData && Array.isArray(nextPokemonData.pokemon);
-                    if (ready) {
-                      setItems((prev) => {
-                        const seen = new Set(prev.map((p) => p.pokemonId));
-                        const merged = [...prev];
-                        for (const p of nextPokemonData.pokemon) {
-                          if (!seen.has(p.pokemonId)) merged.push(p);
-                        }
-                        return merged;
-                      });
+                      // If prefetched next page is ready, append immediately for instant UX
+                      const ready = !showFavorites && nextPokemonData && Array.isArray(nextPokemonData.pokemon);
+                      if (ready) {
+                        setItems((prev) => {
+                          const seen = new Set(prev.map((p) => p.pokemonId));
+                          const merged = [...prev];
+                          for (const p of nextPokemonData.pokemon) {
+                            if (!seen.has(p.pokemonId)) merged.push(p);
+                          }
+                          return merged;
+                        });
 
-                      const total = nextPokemonData.total ?? 0;
-                      const currentCount = (items.length || 0) + (nextPokemonData.pokemon?.length || 0);
-                      setHasMore(currentCount < total);
+                        const total = nextPokemonData.total ?? 0;
+                        const currentCount = (items.length || 0) + (nextPokemonData.pokemon?.length || 0);
+                        setHasMore(currentCount < total);
 
-                      // Advance offset so the main query aligns with what we just appended
-                      setOffset((o) => o + BATCH_LIMIT);
+                        // Advance offset so the main query aligns with what we just appended
+                        setOffset((o) => o + BATCH_LIMIT);
 
-                      // We already appended; no need to wait on the round-trip
-                      setIsLoadingMore(false);
-                    } else {
-                      // Fallback: trigger fetch and let the effect append + stop loading
-                      setOffset((o) => o + BATCH_LIMIT);
-                    }
-                  }}
-                  disabled={isLoadingMore}
-                  aria-busy={isLoadingMore}
-                  aria-live="polite"
-                  aria-label="Load more Pokémon"
-                >
-                  Load More
-                </Button>
+                        // We already appended; no need to wait on the round-trip
+                        setIsLoadingMore(false);
+                      } else {
+                        // Fallback: trigger fetch and let the effect append + stop loading
+                        setOffset((o) => o + BATCH_LIMIT);
+                      }
+                    }}
+                    disabled={isLoadingMore}
+                    aria-busy={isLoadingMore}
+                    aria-live="polite"
+                    aria-label="Load more Pokémon"
+                  >
+                    Load More
+                  </Button>
+                )}
               </>
             )}
 
