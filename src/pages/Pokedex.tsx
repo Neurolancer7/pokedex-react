@@ -299,12 +299,14 @@ export default function Pokedex() {
                     aria-busy="true"
                     aria-live="polite"
                   >
-                    <div className="w-full sm:w-auto px-6 h-11 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md flex items-center justify-center">
-                      <img
-                        src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png"
-                        alt="Loading Pokéball"
-                        className="h-11 w-11 animate-bounce-spin"
-                      />
+                    <div className="w-full sm:w-auto px-6 h-11 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg border border-white/10 flex items-center justify-center">
+                      <div className="h-9 w-9 rounded-full bg-white/10 backdrop-blur ring-2 ring-white/40 shadow-md shadow-primary/30 flex items-center justify-center animate-pulse">
+                        <img
+                          src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png"
+                          alt="Loading Pokéball"
+                          className="h-7 w-7 animate-bounce-spin drop-shadow"
+                        />
+                      </div>
                       <span className="sr-only">Loading more Pokémon…</span>
                     </div>
                   </div>
@@ -313,34 +315,10 @@ export default function Pokedex() {
                     variant="default"
                     className="w-full sm:w-auto px-6 h-11 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md hover:from-blue-500 hover:to-purple-500 active:scale-[0.99] transition-all disabled:opacity-70 disabled:cursor-not-allowed"
                     onClick={() => {
+                      // Keep page static during load; only extend after data arrives
                       if (isLoadingMore) return;
                       setIsLoadingMore(true);
-
-                      // If prefetched next page is ready, append immediately for instant UX
-                      const ready = !showFavorites && nextPokemonData && Array.isArray(nextPokemonData.pokemon);
-                      if (ready) {
-                        setItems((prev) => {
-                          const seen = new Set(prev.map((p) => p.pokemonId));
-                          const merged = [...prev];
-                          for (const p of nextPokemonData.pokemon) {
-                            if (!seen.has(p.pokemonId)) merged.push(p);
-                          }
-                          return merged;
-                        });
-
-                        const total = nextPokemonData.total ?? 0;
-                        const currentCount = (items.length || 0) + (nextPokemonData.pokemon?.length || 0);
-                        setHasMore(currentCount < total);
-
-                        // Advance offset so the main query aligns with what we just appended
-                        setOffset((o) => o + BATCH_LIMIT);
-
-                        // We already appended; no need to wait on the round-trip
-                        setIsLoadingMore(false);
-                      } else {
-                        // Fallback: trigger fetch and let the effect append + stop loading
-                        setOffset((o) => o + BATCH_LIMIT);
-                      }
+                      setOffset((o) => o + BATCH_LIMIT);
                     }}
                     disabled={isLoadingMore}
                     aria-busy={isLoadingMore}

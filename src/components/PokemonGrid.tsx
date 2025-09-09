@@ -16,6 +16,23 @@ interface PokemonGridProps {
   onPageChange?: (page: number) => void;
 }
 
+const containerVariants = {
+  hidden: {},
+  visible: {
+    transition: { staggerChildren: 0.05, delayChildren: 0.02 },
+  },
+};
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 12, filter: "blur(4px)" },
+  visible: {
+    opacity: 1,
+    y: 0,
+    filter: "blur(0px)",
+    transition: { duration: 0.28, ease: "easeOut" },
+  },
+};
+
 export function PokemonGrid({ 
   pokemon, 
   favorites, 
@@ -186,17 +203,15 @@ export function PokemonGrid({
   return (
     <>
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ staggerChildren: 0.05 }}
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
         className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"
       >
         {pokemon.map((poke, index) => (
           <motion.div
             key={poke.pokemonId}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.05 }}
+            variants={cardVariants}
           >
             <PokemonCard
               pokemon={poke}
