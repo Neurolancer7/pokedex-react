@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { ArrowRight, Search, Heart, Zap, Shield, Star } from "lucide-react";
+import { ArrowRight, Search, Heart, Zap, Shield, Star, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,7 @@ import { useNavigate } from "react-router";
 import { useQuery as useConvexQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { PokemonGrid } from "@/components/PokemonGrid";
+import { useEffect, useState } from "react";
 
 const LANDING_FEATURES = [
   {
@@ -51,6 +52,26 @@ export default function Landing() {
   const { isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
 
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("theme");
+      if (saved) return saved === "dark";
+      return window.matchMedia("(prefers-color-scheme: dark)").matches;
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (isDark) {
+      root.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      root.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
+  }, [isDark]);
+
   const pokemonData = useConvexQuery(api.pokemon.list, {
     limit: 20,
     offset: 0,
@@ -88,6 +109,18 @@ export default function Landing() {
           </motion.div>
 
           <div className="flex items-center gap-4">
+            {/* Dark mode toggle on right side of nav */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 shrink-0"
+              onClick={() => setIsDark((d) => !d)}
+              aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+              title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </Button>
+
             {isAuthenticated ? (
               <Button onClick={() => navigate("/pokedex")} className="gap-2 w-full sm:w-auto">
                 Open Pokédex
