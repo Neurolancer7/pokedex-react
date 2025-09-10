@@ -56,8 +56,6 @@ export default function Landing() {
     offset: 0,
   });
 
-  
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* Header */}
@@ -91,20 +89,20 @@ export default function Landing() {
 
           <div className="flex items-center gap-4">
             {isAuthenticated ? (
-              <Button onClick={() => navigate("/pokedex")} className="gap-2">
+              <Button onClick={() => navigate("/pokedex")} className="gap-2 w-full sm:w-auto">
                 Open Pokédex
                 <ArrowRight className="h-4 w-4" />
               </Button>
             ) : (
-              <>
-                <Button variant="ghost" onClick={() => navigate("/auth")}>
+              <div className="flex items-center gap-3 sm:gap-4 flex-col sm:flex-row w-full sm:w-auto">
+                <Button variant="ghost" onClick={() => navigate("/auth")} className="w-full sm:w-auto">
                   Sign In
                 </Button>
-                <Button onClick={() => navigate("/pokedex")} className="gap-2">
+                <Button onClick={() => navigate("/pokedex")} className="gap-2 w-full sm:w-auto">
                   Explore
                   <ArrowRight className="h-4 w-4" />
                 </Button>
-              </>
+              </div>
             )}
           </div>
         </div>
@@ -153,7 +151,7 @@ export default function Landing() {
             <Button
               size="lg"
               onClick={() => navigate("/pokedex")}
-              className="gap-2 px-8 py-6 text-lg"
+              className="gap-2 px-8 py-6 text-lg w-full sm:w-auto"
             >
               Start Exploring
               <ArrowRight className="h-5 w-5" />
@@ -163,7 +161,7 @@ export default function Landing() {
                 variant="outline"
                 size="lg"
                 onClick={() => navigate("/auth")}
-                className="px-8 py-6 text-lg"
+                className="px-8 py-6 text-lg w-full sm:w-auto"
               >
                 Sign Up Free
               </Button>
@@ -175,7 +173,7 @@ export default function Landing() {
             initial={{ y: 50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.5 }}
-            className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto"
+            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto"
           >
             {LANDING_SAMPLE_POKEMON.map((pokemon, index) => (
               <motion.div
@@ -187,7 +185,7 @@ export default function Landing() {
                 className="cursor-pointer"
               >
                 <Card className="overflow-hidden border-2 hover:border-primary/50 transition-all duration-300">
-                  <CardContent className="p-4">
+                  <CardContent className="p-4 sm:p-4">
                     <div className="text-center">
                       <div className="w-16 h-16 mx-auto mb-3 bg-gradient-to-br from-muted/50 to-muted rounded-full flex items-center justify-center">
                         <img
@@ -314,7 +312,7 @@ export default function Landing() {
             <Button
               size="lg"
               onClick={() => navigate("/pokedex")}
-              className="gap-2 px-8 py-6 text-lg"
+              className="gap-2 px-8 py-6 text-lg w-full sm:w-auto"
             >
               <Star className="h-5 w-5" />
               Explore Pokédex
@@ -324,7 +322,7 @@ export default function Landing() {
                 variant="outline"
                 size="lg"
                 onClick={() => navigate("/auth")}
-                className="px-8 py-6 text-lg"
+                className="px-8 py-6 text-lg w-full sm:w-auto"
               >
                 Create Account
               </Button>
