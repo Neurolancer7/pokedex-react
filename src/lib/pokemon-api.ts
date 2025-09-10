@@ -48,6 +48,8 @@ export const POKEMON_GENERATIONS = [
   { id: 6, name: "Kalos", range: "650-721" },
   { id: 7, name: "Alola", range: "722-809" },
   { id: 8, name: "Galar", range: "810-905" },
+  // Add Hisui (maps to Gen 8 filtering for compatibility)
+  { id: 8, name: "Hisui", range: "—" },
   // Add Paldea (Gen 9)
   { id: 9, name: "Paldea", range: "906-1025" },
 ];

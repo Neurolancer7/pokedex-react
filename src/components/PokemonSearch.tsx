@@ -96,8 +96,8 @@ export function PokemonSearch({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Generations</SelectItem>
-              {POKEMON_GENERATIONS.map((gen) => (
-                <SelectItem key={gen.id} value={gen.id.toString()}>
+              {POKEMON_GENERATIONS.map((gen, idx) => (
+                <SelectItem key={`${gen.id}-${gen.name}-${idx}`} value={gen.id.toString()}>
                   {gen.name}
                 </SelectItem>
               ))}

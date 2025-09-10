@@ -65,6 +65,15 @@ export const list = query({
         results = await ctx.db.query("pokemon").collect();
       }
 
+      // Include Hisuian forms when viewing Generation 8
+      if (hasValidGeneration && (args.generation as number) === 8) {
+        const all = await ctx.db.query("pokemon").collect();
+        const hisuiForms = all.filter(
+          (row) => typeof row.name === "string" && row.name.includes("-hisui"),
+        );
+        results = results.concat(hisuiForms);
+      }
+
       // De-duplicate by pokemonId (keep first by creation order)
       const unique = new Map<number, any>();
       for (const row of results) {

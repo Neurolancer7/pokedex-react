@@ -83,6 +83,84 @@ export const fetchAndCachePokemon = action({
   },
 });
 
+export const fetchHisuiPokemon = action({
+  args: {},
+  handler: async (ctx) => {
+    try {
+      // Ensure types are cached
+      await cacheTypes(ctx);
+
+      // Fetch the Hisui Pokédex
+      const hisuiDex = await fetch("https://pokeapi.co/api/v2/pokedex/hisui");
+      if (!hisuiDex.ok) {
+        throw new Error(`PokéAPI hisui pokedex request failed: ${hisuiDex.status} ${hisuiDex.statusText}`);
+      }
+      const dexData = await hisuiDex.json();
+
+      // Entries reference species; we need the correct Pokémon form (prefer "-hisui" variants if present)
+      const speciesEntries: Array<{ pokemon_species: { name: string; url: string } }> =
+        Array.isArray(dexData?.pokemon_entries) ? dexData.pokemon_entries : [];
+
+      // Limit concurrent requests to avoid spikes
+      const CONCURRENCY = 8;
+      for (let i = 0; i < speciesEntries.length; i += CONCURRENCY) {
+        const batch = speciesEntries.slice(i, i + CONCURRENCY);
+
+        await Promise.all(
+          batch.map(async (entry) => {
+            try {
+              const speciesName = entry.pokemon_species?.name;
+              if (!speciesName) return;
+
+              // Fetch species to discover varieties (including hisuian forms)
+              const speciesResp = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${speciesName}`);
+              if (!speciesResp.ok) {
+                throw new Error(`Species fetch failed (${speciesName}): ${speciesResp.status} ${speciesResp.statusText}`);
+              }
+              const speciesData = await speciesResp.json();
+
+              // Pick a hisuian form if available; otherwise default species pokemon
+              const varieties: Array<{ is_default: boolean; pokemon: { name: string } }> =
+                Array.isArray(speciesData?.varieties) ? speciesData.varieties : [];
+              const hisuianVariety =
+                varieties.find((v) => v.pokemon?.name?.includes("-hisui")) ||
+                varieties.find((v) => v.pokemon?.name?.includes("-hisuyan")) || // safety for typos/alt spellings
+                null;
+
+              const targetPokemonName =
+                hisuianVariety?.pokemon?.name ||
+                varieties.find((v) => v.is_default)?.pokemon?.name ||
+                speciesName;
+
+              // Fetch the actual Pokémon entry by name to get stats/moves/sprites
+              const pokemonResp = await fetch(`https://pokeapi.co/api/v2/pokemon/${targetPokemonName}`);
+              if (!pokemonResp.ok) {
+                throw new Error(`Pokémon fetch failed (${targetPokemonName}): ${pokemonResp.status} ${pokemonResp.statusText}`);
+              }
+              const pokemonData = await pokemonResp.json();
+
+              // Cache
+              await ctx.runMutation(internal.pokemonInternal.cachePokemon, { pokemonData, speciesData });
+            } catch (innerErr) {
+              console.error("Hisui batch item error:", innerErr);
+              // continue with other entries
+            }
+          }),
+        );
+
+        // Gentle delay between batches
+        await new Promise((r) => setTimeout(r, 120));
+      }
+
+      return { success: true, message: "Hisui Pokémon cached" };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error("fetchHisuiPokemon error:", error);
+      throw new Error(`Failed to fetch Hisui Pokémon: ${message}`);
+    }
+  },
+});
+
 async function cacheTypes(ctx: any) {
   try {
     const typesResponse = await fetch("https://pokeapi.co/api/v2/type");

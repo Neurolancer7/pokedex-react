@@ -141,6 +141,7 @@ export default function Pokedex() {
   const addToFavorites = useConvexMutation(api.pokemon.addToFavorites);
   const removeFromFavorites = useConvexMutation(api.pokemon.removeFromFavorites);
   const fetchPokemonData = useAction(api.pokemonData.fetchAndCachePokemon);
+  const fetchHisuiRegion = useAction(api.pokemonData.fetchHisuiPokemon);
 
   // Theme management
   useEffect(() => {
@@ -257,29 +258,47 @@ export default function Pokedex() {
     if (fetchedGenRef.current.has(selectedGeneration)) return; // already tried this gen
 
     const range = GEN_RANGES[selectedGeneration];
-    if (!range) return;
+    const promises: Array<Promise<any>> = [];
+
+    // Standard Gen range fetch if available
+    if (range) {
+      const p1 = fetchPokemonData({
+        limit: range.end - range.start + 1,
+        offset: range.start - 1,
+      });
+
+      toast.promise(p1, {
+        loading: `Fetching Generation ${selectedGeneration} Pokémon...`,
+        success: (data) => {
+          const count = (data as any)?.cached ?? 0;
+          return `Loaded ${count} Pokémon for Generation ${selectedGeneration}.`;
+        },
+        error: (err) => (err instanceof Error ? err.message : "Failed to load generation data"),
+      });
+
+      promises.push(p1);
+    }
+
+    // Additionally fetch Hisuian Pokémon when viewing Gen 8 (Hisui region)
+    if (selectedGeneration === 8) {
+      const p2 = fetchHisuiRegion({});
+      toast.promise(p2, {
+        loading: "Fetching Hisuian Pokémon…",
+        success: "Loaded Hisuian Pokémon.",
+        error: (err) => (err instanceof Error ? err.message : "Failed to fetch Hisuian Pokémon"),
+      });
+      promises.push(p2);
+    }
+
+    if (promises.length === 0) return;
 
     fetchedGenRef.current.add(selectedGeneration);
     setIsRefreshing(true);
 
-    const promise = fetchPokemonData({
-      limit: range.end - range.start + 1,
-      offset: range.start - 1,
-    });
-
-    toast.promise(promise, {
-      loading: `Fetching Generation ${selectedGeneration} Pokémon...`,
-      success: (data) => {
-        const count = (data as any)?.cached ?? 0;
-        return `Loaded ${count} Pokémon for Generation ${selectedGeneration}.`;
-      },
-      error: (err) => (err instanceof Error ? err.message : "Failed to load generation data"),
-    });
-
-    promise.finally(() => {
+    Promise.allSettled(promises).finally(() => {
       setIsRefreshing(false);
     });
-  }, [selectedGeneration, items.length, showFavorites, fetchPokemonData, isRefreshing]);
+  }, [selectedGeneration, items.length, showFavorites, fetchPokemonData, fetchHisuiRegion, isRefreshing]);
 
   useEffect(() => {
     setItems([]);
