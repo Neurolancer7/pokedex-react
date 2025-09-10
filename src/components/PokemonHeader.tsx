@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Menu } from "lucide-react";
+import { Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "react-router";
@@ -92,6 +93,18 @@ export function PokemonHeader({
 
           {/* Actions - Desktop updated: username with avatar dropdown only */}
           <div className="hidden sm:flex items-center gap-1.5 md:gap-2">
+            {/* Add: Dark mode toggle button (always visible) */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 rounded-full border bg-card/70 hover:bg-accent/60 transition-colors shadow-sm"
+              onClick={onThemeToggle}
+              aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+              title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </Button>
+
             {isAuthenticated ? (
               <DropdownMenu open={userMenuOpen} onOpenChange={setUserMenuOpen}>
                 <DropdownMenuTrigger asChild>
@@ -171,6 +184,19 @@ export function PokemonHeader({
                         </div>
                       </div>
                       <div className="flex flex-col gap-2">
+                        {/* Add: Mobile theme toggle */}
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-center py-3"
+                          onClick={() => {
+                            onThemeToggle();
+                            setMenuOpen(false);
+                          }}
+                          aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+                        >
+                          {isDark ? "Light Mode" : "Dark Mode"}
+                        </Button>
+
                         <Button
                           variant="outline"
                           className="w-full justify-center py-3"
@@ -206,15 +232,15 @@ export function PokemonHeader({
                     </>
                   ) : (
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       className="w-full justify-center py-3"
                       onClick={() => {
-                        navigate("/auth");
+                        onThemeToggle();
                         setMenuOpen(false);
                       }}
-                      aria-label="Sign in"
+                      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
                     >
-                      Sign In
+                      {isDark ? "Light Mode" : "Dark Mode"}
                     </Button>
                   )}
                 </div>
