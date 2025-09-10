@@ -101,7 +101,7 @@ export function PokemonHeader({
                     className="px-2 sm:px-3 flex items-center gap-2"
                     onMouseEnter={() => setUserMenuOpen(true)}
                   >
-                    <Avatar className="size-6">
+                    <Avatar className="w-9 h-9 sm:w-10 sm:h-10">
                       <AvatarImage src={selectedImage} alt="Profile" />
                       <AvatarFallback>TR</AvatarFallback>
                     </Avatar>
@@ -162,7 +162,7 @@ export function PokemonHeader({
                   {isAuthenticated ? (
                     <>
                       <div className="flex items-center gap-2 px-2 py-1">
-                        <Avatar className="size-7">
+                        <Avatar className="w-9 h-9 sm:w-10 sm:h-10">
                           <AvatarImage src={selectedImage} alt="Profile" />
                           <AvatarFallback>TR</AvatarFallback>
                         </Avatar>
